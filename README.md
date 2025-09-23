@@ -1,36 +1,70 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# ABA Generator
 
-## Getting Started
+A minimal web application built with **Next.js** and deployed on **Vercel**.  
+The project aims to implement an **Assumption-Based Argumentation (ABA) generator** with the following capabilities:
 
-First, run the development server:
+- Definition of literals, rules, and assumptions  
+- Definition of contraries for assumptions  
+- Automatic conversion to non-circular and atomic ABA frameworks  
+- Generation of all arguments and attacks  
+- Handling of preferences between assumptions  
+- Computation of normal and reverse attacks  
+
+---
+
+## 🚀 Live Demo
+👉 [Visit the deployed app](https://your-vercel-url.vercel.app)  
+
+---
+
+## 📂 Project Structure
+- `app/page.tsx` → Home page with a text input (skeleton for ABA data).  
+- Future components will handle parsing, framework generation, and visualization.  
+
+---
+
+## 🛠️ Tech Stack
+- [Next.js 14](https://nextjs.org/)  
+- [React](https://react.dev/)  
+- [Tailwind CSS](https://tailwindcss.com/)  
+- Deployed with [Vercel](https://vercel.com/)  
+
+---
+
+## 🔧 Getting Started
+
+Clone the repository and install dependencies:
 
 ```bash
+git clone https://github.com/<your-username>/aba-generator.git
+cd aba-generator
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Then open http://localhost:3000.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## 📖 Usage
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Paste an ABA specification into the textarea on the homepage, for example:
 
-## Learn More
+```bash
+L: [a,b,c,q,p,r,s,t]
+A: [a,b,c]
+C(a): r
+C(b): s
+C(c): t
+[r1]: p <- q,a
+[r2]: q <-
+[r3]: r <- b,c
+[r4]: t <- p,c
+[r5]: s <- t
+PREF: a > b
+```
 
-To learn more about Next.js, take a look at the following resources:
+Click Parse to process the input (parsing logic coming soon).
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## 📌 Status
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- ✅ Basic skeleton ready
+- 🚧 Parsing & reasoning engine to be implemented
