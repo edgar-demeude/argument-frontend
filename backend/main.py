@@ -77,8 +77,12 @@ def main():
     # Generate attacks
     aba_framework.generate_attacks()
     attacks = aba_framework.attacks
-    print(f"The generated attacks are:")
+    print(f"\nThe generated attacks are:")
     print(f"{attacks}")
+
+    # Check if the ABA framework is atomic
+    is_atomic = aba_framework.is_aba_atomic()
+    print(f"\nIs the ABA framework atomic? {is_atomic}")
 
 
 if __name__ == "__main__":

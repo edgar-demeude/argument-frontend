@@ -119,3 +119,9 @@ class ABAFramework:
                 for contrary in self.contraries:
                     if arg1.claim == contrary.contrary_attacker and contrary.contraried_literal in arg2.leaves:
                         self.attacks.add(Attacks(arg1, arg2))
+
+    def is_aba_atomic(self) -> bool:
+        for rule in self.rules:
+            if rule.body and not all(lit in self.assumptions for lit in rule.body):
+                return False
+        return True
