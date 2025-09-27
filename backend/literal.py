@@ -7,7 +7,7 @@ class Literal:
         is_neg (bool): Indicates if the literal is negated.
     """
 
-    def __init__(self, literal_name: str, is_neg: bool):
+    def __init__(self, literal_name: str, is_neg: bool = False):
         self.literal_name: str = literal_name
         self.is_neg: bool = is_neg
 

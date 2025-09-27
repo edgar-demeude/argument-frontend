@@ -23,7 +23,8 @@ class Contrary:
         )
 
     def __str__(self) -> str:
-        return f" {str(self.contraried_literal) + '\u0304'} = {str(self.contrary_attacker)}"
+        return f" {str(self.contraried_literal)}\u0304 = {str(self.contrary_attacker)}"
 
+    
     def __hash__(self) -> int:
         return hash((self.contraried_literal, self.contrary_attacker))

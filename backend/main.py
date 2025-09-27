@@ -1,84 +1,104 @@
+from typing import Dict, Set
 from argument import Argument
+from parsing import parse_doc
 from contrary import Contrary
 from literal import Literal
 from rule import Rule
 from aba_framework import ABAFramework
 
 
-def main():
-    a = Literal("a", False)
-    b = Literal("b", False)
-    c = Literal("c", False)
-    p = Literal("p", False)
-    q = Literal("q", False)
-    r = Literal("r", False)
-    s = Literal("s", False)
-    t = Literal("t", False)
-    # Literal print test
-    print(f"Literal a is: {a}, Literal b is: {b}")
+def build_aba_framework(doc_path: str) -> ABAFramework:
+    """
+    Build an ABAFramework object from a structured document.
 
-    # Rule print test
-    rule1 = Rule("r1", p, {q, a})
-    print(f"Rule is: {rule1}")
+    Args:
+        doc_path (str): Path to the document to parse.
 
-    rule2 = Rule("r2", q, {})
-    print(f"Rule is: {rule2}")
+    Returns:
+        ABAFramework: An ABAFramework instance containing:
+            - language (Set[Literal]): Set of Literal objects.
+            - rules (Set[Rule]): Set of Rule objects.
+            - assumptions (Set[Literal]): Set of assumptions.
+            - contraries (Set[Contrary]): Set of contraries.
 
-    rule3 = Rule("r3", r, {b, c})
-    rule4 = Rule("r4", t, {p, c})
-    rule5 = Rule("r5", s, {t})
+    Example:
+        >>> aba = build_aba_framework("./backend/doc.txt")
+        >>> isinstance(next(iter(aba.language)), Literal)
+        True
+        >>> isinstance(next(iter(aba.rules)), Rule)
+        True
+    """
+    # Parse the document
+    language_parse, assumptions_parse, contraries_parse, rules_parse, preferences_parse = parse_doc(doc_path)
 
-    # Contrary print test
-    contrary1 = Contrary(a, r)
-    print(f"Contrary is: {contrary1}")
+    # Initialize containers
+    language: Dict[str, Literal] = {}
+    rules: Set[Rule] = set()
+    contraries: Set[Contrary] = set()
+    assumptions: Set[Literal] = set()
 
-    # Argument print test
-    arg1 = Argument(
-        argument_name="A1",
-        claim=p,
-        leaves={a, b, c}
-    )
-    print(f"Argument is: {arg1}")
+    # -----------------------
+    # Language: build Literal objects
+    # -----------------------
+    for lit in language_parse:
+        language[lit] = Literal(lit)
+    language_set: Set[Literal] = set(language.values())
 
-    # language {a,b,c,p,q,r,s,t}
-    language = {a, b, c, p, q, r, s, t}
+    # -----------------------
+    # Rules: convert parsed structure into Rule objects
+    # -----------------------
+    for rule in rules_parse:
+        r_id = next(iter(rule))                 # Rule identifier, e.g., 'r1'
+        head = next(iter(rule[r_id]))           # Head of the rule
+        body_atoms = rule[r_id][head]           # Body literals as set of names
+        body_literals = {language[i] for i in body_atoms if i in language}
+        rules.add(Rule(r_id, language[head], body_literals))
 
-    # rules {p←q,a, q←r, r←b,c}
-    rules = {rule1,
-             rule2,
-             rule3,
-             rule4,
-             rule5}
+    # -----------------------
+    # Contraries: build Contrary objects
+    # -----------------------
+    for lit1, lit2 in contraries_parse:
+        contraries.add(Contrary(language[lit1], language[lit2]))
 
-    # assumptions {a,b,c}
-    assumptions = {a, b, c}
+    # -----------------------
+    # Assumptions: convert to set of Literal
+    # -----------------------
+    for lit in assumptions_parse:
+        assumptions.add(language[lit])
 
-    # contraries {a̅ = r, b̅ = s, c̅ = t}
-    contraries = {Contrary(a, r),
-                  Contrary(b, s),
-                  Contrary(c, t)}
-
-    # Create ABA framework
+    # -----------------------
+    # Build ABA framework
+    # -----------------------
     aba_framework = ABAFramework(
-        language=language,
+        language=language_set,
         rules=rules,
         assumptions=assumptions,
         contraries=contraries
     )
 
+    return aba_framework
+
+
+def main():
+    """
+    Main function to build the ABA framework, generate arguments and attacks,
+    and check atomicity.
+    """
+    # Build the framework
+    aba_framework = build_aba_framework("./backend/doc.txt")
     print(f"The ABA framework is: {aba_framework}")
 
     # Generate arguments
     aba_framework.generate_arguments()
     gen_args = aba_framework.arguments
-    print(f"The generated arguments are:")
-    print(f"{gen_args}")
+    print("\nThe generated arguments are:")
+    print(gen_args)
 
     # Generate attacks
     aba_framework.generate_attacks()
     attacks = aba_framework.attacks
-    print(f"\nThe generated attacks are:")
-    print(f"{attacks}")
+    print("\nThe generated attacks are:")
+    print(attacks)
 
     # Check if the ABA framework is atomic
     is_atomic = aba_framework.is_aba_atomic()
