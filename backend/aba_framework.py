@@ -5,6 +5,7 @@ from rule import Rule
 from attacks import Attacks
 from collections import deque, defaultdict
 from itertools import product
+from pyvis.network import Network
 
 
 class ABAFramework:
@@ -45,25 +46,33 @@ class ABAFramework:
 
     def __str__(self) -> str:
         """
-        Returns a string representation of the ABAFramework, including its language, rules, assumptions, contraries, preferences, and arguments.
+        Returns a string representation of the ABAFramework, including its language, rules, assumptions, contraries,
+        and, if present, preferences and arguments.
         """
-         
         language_str = ', '.join(str(literal) for literal in self.language)
         rules_str = '\n'.join(str(rule) for rule in self.rules)
-        assumptions_str = ', '.join(str(literal)
-                                    for literal in self.assumptions)
-        contraries_str = ', '.join(str(contrary)
-                                   for contrary in self.contraries)
-        preferences_str = '\n'.join(f"{str(literal)}: {', '.join(str(pref) for pref in prefs)}"
-                                    for literal, prefs in self.preferences.items())
-        arguments_str = '\n'.join(str(argument)
-                                  for argument in self.arguments)
-        return (f"L = {{{language_str}}}\n"
-                f"R = {{\n{rules_str}\n}}\n"
-                f"A = {{{assumptions_str}}}\n"
-                f"CONTRARIES = {{{contraries_str}}}\n"
-                f"PREF :\n{preferences_str}\n"
-                f"ARGS :\n{arguments_str}\n")
+        assumptions_str = ', '.join(str(literal) for literal in self.assumptions)
+        contraries_str = ', '.join(str(contrary) for contrary in self.contraries)
+
+        result = [
+            f"L = {{{language_str}}}",
+            f"R = {{\n{rules_str}\n}}",
+            f"A = {{{assumptions_str}}}",
+            f"CONTRARIES = {{{contraries_str}}}"
+        ]
+
+        if self.preferences:
+            preferences_str = '\n'.join(
+                f"{str(literal)}: {', '.join(str(pref) for pref in prefs)}"
+                for literal, prefs in self.preferences.items()
+            )
+            result.append(f"PREF :\n{preferences_str}")
+
+        if self.arguments:
+            arguments_str = '\n'.join(str(argument) for argument in self.arguments)
+            result.append(f"ARGS :\n{arguments_str}")
+
+        return '\n'.join(result)
 
     def __hash__(self) -> int:
         """
@@ -135,6 +144,88 @@ class ABAFramework:
                     if arg1.claim == contrary.contrary_attacker and contrary.contraried_literal in arg2.leaves:
                         self.attacks.add(Attacks(arg1, arg2))
 
+
+    def transform_aba(self) -> None:
+        """
+        Transforms the ABA framework to ensure it is both non-circular and atomic.
+
+        Procedure:
+            1. Checks if the framework is circular using is_aba_circular().
+            2. If it is circular, calls _make_aba_not_circular() to remove circularity.
+            3. If it is not circular but not atomic, calls _make_aba_atomic() to ensure atomicity.
+            4. The transformation is performed in-place and modifies the framework's rules and language as needed.
+
+        After calling this function, the ABA framework will be non-circular and atomic.
+        """
+        print("\n ------- Transforming ABA framework -------\n")
+        if self.is_aba_circular():
+            print("The ABA Framework is circular\n")
+            self._make_aba_not_circular()
+        elif not self.is_aba_atomic():
+            print("The ABA Framework is not atomic\n")
+            self._make_aba_atomic()
+
+    def _make_aba_atomic(self) -> None:
+        """
+        Transforms the ABA framework into an atomic one.
+
+        Procedure:
+            1. For each literal x in the language that is not an assumption:
+                - Introduce two new literals: xd and xnd (both are assumptions).
+                - Add both to the language and assumptions.
+            2. For each rule:
+                - Replace non-assumption literals in the body with their 'xd' counterparts.
+            3. For each new pair (xd, xnd):
+                - Add contraries: Contrary(xd, xnd) and Contrary(xnd, x).
+
+        After this transformation, all rule bodies contain only assumptions.
+
+        Example:
+            Original framework:
+                L = {a, b, x}
+                A = {a, b}
+                R = { r1: a <- x }
+            
+            After _make_aba_atomic():
+                L = {a, b, x, xd, xnd}
+                A = {a, b, xd, xnd}
+                R = { a <- xd }
+                Contraries = { xd̄ = xnd, xnd̄ = x }
+        """
+        new_language = set(self.language)
+        new_assumptions = set(self.assumptions)
+        new_rules = set()
+        new_contraries = set(self.contraries)
+
+        # Step 1: Create xd and xnd for each non-assumption literal
+        mapping = {}  # maps original non-assumption literal -> xd
+        for lit in self.language:
+            if lit not in self.assumptions:
+                xd = Literal(f"{lit}d")
+                xnd = Literal(f"{lit}nd")
+                new_language.update({xd, xnd})
+                new_assumptions.update({xd, xnd})
+                mapping[lit] = xd
+                # Add contraries
+                new_contraries.add(Contrary(xd, xnd))
+                new_contraries.add(Contrary(xnd, lit))
+
+        # Step 2: Replace non-assumptions in rule bodies with xd
+        for rule in self.rules:
+            new_body = set()
+            for lit in rule.body:
+                if lit in mapping:   # replace non-assumption with xd
+                    new_body.add(mapping[lit])
+                else:
+                    new_body.add(lit)
+            new_rules.add(Rule(rule.rule_name, rule.head, new_body))
+
+        # Step 3: Update framework
+        self.language = new_language
+        self.assumptions = new_assumptions
+        self.rules = new_rules
+        self.contraries = new_contraries
+
     def is_aba_atomic(self) -> bool:
         """
         Checks if the ABA framework is atomic.
@@ -148,67 +239,92 @@ class ABAFramework:
                 return False
         return True
     
-    def make_aba_atomic(self) -> None:
-        # TODO: Transform the ABA framework to an atomic one if it is non-atomic
-        # and non-circular, following the procedure described in Lecture 4A.5:
-        # "Transforming non-circular ABA frameworks to Atomic ABA frameworks"
-        # Reference: https://bruno-yun.notion.site/Lecture-4A-Assumption-based-argumentation-and-complexity-1-5-hours-5291ad4e5eb44db182980fc0728f5faf
-
-        raise NotImplementedError("make_aba_atomic is not implemented yet")
-
     def is_aba_circular(self) -> bool:
-        # TODO: Checks if the ABA framework is circular.
-
         """
-        Checks if the ABA framework is circular.
-
-        An argument is said to be circular iff there is a path from a leaf to the root with two distinct 
-        vertices with the same label. An ABA framework is said to be circular if there is at least one 
+        Checks if the ABA framework is circular by detecting cycles in the rule dependency graph.
 
         Returns:
-            bool: True if the framework is circular, False otherwise.
-        circular argument.
-        """
+            bool: True if the framework is circular (i.e., contains a cycle), False otherwise.
 
-        raise NotImplementedError("make_aba_atomic is not implemented yet")
+        Procedure:
+            - The dependency graph is constructed where each node is a literal.
+            - For each rule, an edge is added from every literal in the rule's body to the rule's head.
+            - A cycle in this graph means there is a sequence of rules such that a literal can be derived from itself,
+              directly or indirectly, which is the definition of circularity in ABA frameworks.
+            - The function uses depth-first search (DFS) to detect cycles in the graph.
+        """
+        # Build adjacency list: for each literal, store the set of literals it can reach via rules
+        adj = {lit: set() for lit in self.language}
+        for rule in self.rules:
+            for body_lit in rule.body:
+                adj[body_lit].add(rule.head)
+
+        def has_cycle(lit, visited, stack):
+            """
+            Helper function to perform DFS and detect cycles.
+
+            Args:
+                lit: The current literal being visited.
+                visited: Set of literals that have been fully explored.
+                stack: Set of literals in the current DFS path (recursion stack).
+
+            Returns:
+                True if a cycle is detected starting from 'lit', False otherwise.
+            """
+            visited.add(lit)
+            stack.add(lit)
+            for neighbor in adj.get(lit, []):
+                if neighbor not in visited:
+                    if has_cycle(neighbor, visited, stack):
+                        return True
+                elif neighbor in stack:
+                    # Found a back edge, which means a cycle exists
+                    return True
+            stack.remove(lit)
+            return False
+
+        visited = set()
+        # Check for cycles starting from each literal in the language
+        for lit in self.language:
+            if lit not in visited:
+                if has_cycle(lit, visited, set()):
+                    return True  # Cycle found
+        return False  # No cycles
         
 
     
-    def make_aba_circular(self) -> None:
+    def _make_aba_not_circular(self) -> None:
         """
         Transforms the ABA framework to a non-circular one by renaming heads and bodies of rules.
 
-        Circular arguments occur when there is a path from a leaf to a root where the same literal appears more than once.
-        This method eliminates circularity by systematically renaming rule heads and bodies.
-
         Procedure:
-        1. Compute k = |language| - |assumptions|.
-        2. For each atomic rule (body is empty or only contains assumptions):
-        - Create new rules with heads renamed as x1, x2, ..., x(k-1) with the same body.
-        - Keep the original atomic rule.
-        3. For each non-atomic rule (body contains non-assumptions):
-        - Create k-1 new rules with heads renamed as x2, x3, ... and bodies renamed by iteration index.
-        - In the last iteration (i = k-1), keep the original head but update the body with the last renamed literals.
-        4. Update the framework's language and rules with the new transformed rules.
+            1. Compute k = |language| - |assumptions|.
+            2. For each atomic rule (body is empty or only contains assumptions):
+                - Create new rules with heads renamed as x1, x2, ..., x(k-1) with the same body.
+                - Keep the original atomic rule.
+            3. For each non-atomic rule (body contains non-assumptions):
+                - Create k-1 new rules with heads renamed as x2, x3, ... and bodies renamed by iteration index.
+                - In the last iteration (i = k-1), keep the original head but update the body with the last renamed literals.
+            4. Update the framework's language and rules with the new transformed rules.
 
         After this transformation, circular dependencies in arguments are eliminated.
-        The function **modifies the ABAFramework in-place** and does not return any value.
+        The function modifies the ABAFramework in-place and does not return any value.
 
         Example:
-            # Original framework:
-            # Language: {a, b, x, y}
-            # Assumptions: {a, b}
-            # Rules:
-            #   r1: y <- y
-            #   r2: x <- x
-            #   r3: x <- a
-            #
-            # After make_aba_circular():
-            #   New rules:
-            #       y  <- y1
-            #       x  <-  x1
-            #       x1 <- a  
-            #       x  <- a  
+            Original framework:
+                Language: {a, b, x, y}
+                Assumptions: {a, b}
+                Rules:
+                    r1: y <- y
+                    r2: x <- x
+                    r3: x <- a
+
+            After _make_aba_not_circular():
+                New rules:
+                    y  <- y1
+                    x  <-  x1
+                    x1 <- a  
+                    x  <- a  
         """
     
 
@@ -241,4 +357,45 @@ class ABAFramework:
 
         self.language = new_language
         self.rules = new_rules
+    
+
+
+    def plot_attack_graph(self, output_html="attack_graph.html"):
+        """
+        Generates a directed graph from the attacks in the ABA framework and plots it using pyvis.
+
+        Args:
+            output_html (str): The filename for the output HTML visualization.
+        """
+        # Ensure attacks are generated
+        if not hasattr(self, "attacks") or not self.attacks:
+            self.generate_attacks()
+
+        net = Network(directed=True, notebook=False)
+
+        def clean_label(arg):
+            """
+            Extracts only the argument ID (e.g., A1, A2) from the string representation.
+            """
+            raw = str(arg)
+            if raw.startswith("[") and "]" in raw:
+                return raw[1:raw.index("]")]  # remove [ and ]
+            return raw
+
+        # Add nodes with clean IDs
+        for arg in self.arguments:
+            node_id = clean_label(arg)
+            net.add_node(node_id, label=node_id)
+
+        # Add edges with cleaned attacker/target IDs
+        for attack in self.attacks:
+            attacker = clean_label(attack.attacker)
+            target = clean_label(attack.target)
+            net.add_edge(attacker, target)
+
+        net.write_html(output_html)
+        print(f"Attack graph saved to {output_html}")
+
+
+
 

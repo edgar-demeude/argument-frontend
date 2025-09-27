@@ -75,30 +75,26 @@ def main():
     and check atomicity.
     """
     # Build the framework
-    aba_framework = build_aba_framework("./backend/td4b.txt")
-    print(f"The ABA framework is: \n{aba_framework}")
+    aba_framework = build_aba_framework("./backend/atomic.txt")
+    print(f"\n ------- ABA framework -------\n {aba_framework}")
 
 
-
-    # Check if the ABA framework is atomic
-    is_atomic = aba_framework.is_aba_atomic()
-    print(f"\nIs the ABA framework atomic? {is_atomic}")
-
-    # Check if the ABA framework is atomic
-    aba_framework.make_aba_circular()
+    aba_framework.transform_aba()
     print(aba_framework)
 
     # Generate arguments
     aba_framework.generate_arguments()
     gen_args = aba_framework.arguments
-    print("\nThe generated arguments are:")
+    print("\n ------- Generated arguments -------\n ")
     print(gen_args)
 
     # Generate attacks
     aba_framework.generate_attacks()
     attacks = aba_framework.attacks
-    print("\nThe generated attacks are:")
-    print(attacks)
+    print("\n ------- Generated attacks -------\n ")
+    print(attacks, "\n")
+
+    aba_framework.plot_attack_graph()
 
 
 if __name__ == "__main__":
