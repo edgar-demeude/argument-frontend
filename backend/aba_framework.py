@@ -2,6 +2,7 @@ from argument import Argument
 from contrary import Contrary
 from literal import Literal
 from rule import Rule
+from attacks import Attacks
 from collections import deque, defaultdict
 from itertools import product
 
@@ -27,6 +28,7 @@ class ABAFramework:
         self.preferences: dict[Literal, set[Literal]
                                ] = preferences if preferences is not None else {}
         self.arguments: set[Argument] = set()
+        self.attacks: set[Attacks] = set()
 
     def __eq__(self, other: object) -> bool:
         if not isinstance(other, ABAFramework):
@@ -59,7 +61,7 @@ class ABAFramework:
     def __hash__(self) -> int:
         return hash((frozenset(self.language), frozenset(self.rules), frozenset(self.assumptions), frozenset(self.contraries)))
 
-    def generate_arguments(self) -> set[Argument]:
+    def generate_arguments(self) -> None:
         """
         Generates all possible arguments in the ABA framework based on the rules, assumptions, and contraries.
         """
@@ -69,7 +71,7 @@ class ABAFramework:
 
         # Assumptions : {a} ⊢ a
         for a in self.assumptions:
-            arg = Argument(f"a{arg_count}", a, {a})
+            arg = Argument(f"A{arg_count}", a, {a})
             arguments_by_claim[a].add(arg)
             queue.append(arg)
             arg_count += 1
@@ -77,7 +79,7 @@ class ABAFramework:
         # Empty body : {} ⊢ head
         for rule in self.rules:
             if not rule.body:
-                arg = Argument(f"a{arg_count}", rule.head, set())
+                arg = Argument(f"A{arg_count}", rule.head, set())
                 arguments_by_claim[rule.head].add(arg)
                 queue.append(arg)
                 arg_count += 1
@@ -98,7 +100,7 @@ class ABAFramework:
                 for combo in product(*body_arg_lists):
                     new_leaves = set().union(*(arg.leaves for arg in combo))
                     new_arg = Argument(
-                        f"a{arg_count}", rule.head, new_leaves)
+                        f"A{arg_count}", rule.head, new_leaves)
 
                     if new_arg not in arguments_by_claim[rule.head]:
                         arguments_by_claim[rule.head].add(new_arg)
@@ -108,14 +110,12 @@ class ABAFramework:
         # Collect all generated arguments
         self.arguments = set().union(*arguments_by_claim.values())
 
-    def generate_attacks(self) -> set[tuple[Argument, Argument]]:
+    def generate_attacks(self) -> None:
         """
         Generates all possible attacks between arguments based on the contraries in the ABA framework.
         """
-        attacks: set[tuple[Argument, Argument]] = set()
         for arg1 in self.arguments:
             for arg2 in self.arguments:
                 for contrary in self.contraries:
                     if arg1.claim == contrary.contrary_attacker and contrary.contraried_literal in arg2.leaves:
-                        attacks.add((arg1, arg2))
-        return attacks
+                        self.attacks.add(Attacks(arg1, arg2))

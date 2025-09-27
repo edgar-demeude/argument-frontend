@@ -75,7 +75,8 @@ def main():
     print(f"{gen_args}")
 
     # Generate attacks
-    attacks = aba_framework.generate_attacks()
+    aba_framework.generate_attacks()
+    attacks = aba_framework.attacks
     print(f"The generated attacks are:")
     print(f"{attacks}")
 
