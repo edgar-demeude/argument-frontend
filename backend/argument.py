@@ -26,7 +26,11 @@ class Argument:
 
     def __str__(self) -> str:
         leaves_str = ','.join(str(literal) for literal in self.leaves)
-        return f"{self.argument_name} = {{ {leaves_str} }} ⊢ {self.claim}"
+        return f"[{self.argument_name}] = {{{leaves_str}}} ⊢ {self.claim}"
 
     def __hash__(self) -> int:
-        return hash((self.argument_name, self.claim, frozenset(self.leaves)))
+        return hash((self.claim, frozenset(self.leaves)))
+
+    def __repr__(self) -> str:
+        leaves_str = ','.join(sorted(str(l) for l in self.leaves))
+        return f"[{self.argument_name}] {{{leaves_str}}} ⊢ {self.claim}"

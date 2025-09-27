@@ -41,3 +41,12 @@ yarn-error.log*
 next-env.d.ts
 
 .vscode/*
+
+# Python cache
+__pycache__/
+*.py[codz]
+*$py.class
+
+# Local
+Notes/
+Local/

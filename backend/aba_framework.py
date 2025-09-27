@@ -2,6 +2,8 @@ from argument import Argument
 from contrary import Contrary
 from literal import Literal
 from rule import Rule
+from collections import deque, defaultdict
+from itertools import product
 
 
 class ABAFramework:
@@ -56,3 +58,53 @@ class ABAFramework:
 
     def __hash__(self) -> int:
         return hash((frozenset(self.language), frozenset(self.rules), frozenset(self.assumptions), frozenset(self.contraries)))
+
+    def generate_arguments(self):
+        arg_count = 1
+        arguments_by_claim = defaultdict(set)
+        queue = deque()
+
+        # Assumptions : {a} ⊢ a
+        for a in self.assumptions:
+            arg = Argument(f"a{arg_count}", a, {a})
+            arguments_by_claim[a].add(arg)
+            queue.append(arg)
+            arg_count += 1
+
+        # Empty body : {} ⊢ head
+        for rule in self.rules:
+            if not rule.body:
+                arg = Argument(f"a{arg_count}", rule.head, set())
+                arguments_by_claim[rule.head].add(arg)
+                queue.append(arg)
+                arg_count += 1
+
+        # Queue processing to generate more arguments
+        while queue:
+            current_arg = queue.popleft()
+            current_claim = current_arg.claim
+
+            for rule in self.rules:
+                if current_claim not in rule.body:
+                    continue
+
+                if not all(lit in arguments_by_claim for lit in rule.body):
+                    continue
+
+                body_arg_lists = [arguments_by_claim[lit] for lit in rule.body]
+                for combo in product(*body_arg_lists):
+                    new_leaves = set().union(*(arg.leaves for arg in combo))
+                    new_arg = Argument(
+                        f"a{arg_count}", rule.head, new_leaves)
+
+                    if new_arg not in arguments_by_claim[rule.head]:
+                        arguments_by_claim[rule.head].add(new_arg)
+                        queue.append(new_arg)
+                        arg_count += 1
+
+        # Collect all generated arguments
+        all_arguments = set().union(*arguments_by_claim.values())
+
+        self.arguments = all_arguments  # possibly remove this line
+
+        return all_arguments

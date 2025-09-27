@@ -21,6 +21,13 @@ def main():
     rule1 = Rule("r1", p, {q, a})
     print(f"Rule is: {rule1}")
 
+    rule2 = Rule("r2", q, {})
+    print(f"Rule is: {rule2}")
+
+    rule3 = Rule("r3", r, {b, c})
+    rule4 = Rule("r4", t, {p, c})
+    rule5 = Rule("r5", s, {t})
+
     # Contrary print test
     contrary1 = Contrary(a, r)
     print(f"Contrary is: {contrary1}")
@@ -38,8 +45,10 @@ def main():
 
     # rules {p←q,a, q←r, r←b,c}
     rules = {rule1,
-             Rule("r2", q, {r}),
-             Rule("r3", r, {b, c})}
+             rule2,
+             rule3,
+             rule4,
+             rule5}
 
     # assumptions {a,b,c}
     assumptions = {a, b, c}
@@ -58,6 +67,11 @@ def main():
     )
 
     print(f"The ABA framework is: {aba_framework}")
+
+    # Generate arguments
+    gen_args = aba_framework.generate_arguments()
+    print(f"The generated arguments are:")
+    print(f"{gen_args}")
 
 
 if __name__ == "__main__":

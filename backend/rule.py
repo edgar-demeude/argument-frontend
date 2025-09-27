@@ -17,7 +17,7 @@ class Rule:
 
         self.rule_name: str = rule_name
         self.head: Literal = head
-        self.body: set[Literal] = body
+        self.body: set[Literal] = body if body is not None else set()
 
     def __eq__(self, other: object) -> bool:
         if not isinstance(other, Rule):
