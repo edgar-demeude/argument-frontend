@@ -69,9 +69,15 @@ def main():
     print(f"The ABA framework is: {aba_framework}")
 
     # Generate arguments
-    gen_args = aba_framework.generate_arguments()
+    aba_framework.generate_arguments()
+    gen_args = aba_framework.arguments
     print(f"The generated arguments are:")
     print(f"{gen_args}")
+
+    # Generate attacks
+    attacks = aba_framework.generate_attacks()
+    print(f"The generated attacks are:")
+    print(f"{attacks}")
 
 
 if __name__ == "__main__":

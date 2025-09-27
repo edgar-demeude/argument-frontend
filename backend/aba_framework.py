@@ -59,7 +59,10 @@ class ABAFramework:
     def __hash__(self) -> int:
         return hash((frozenset(self.language), frozenset(self.rules), frozenset(self.assumptions), frozenset(self.contraries)))
 
-    def generate_arguments(self):
+    def generate_arguments(self) -> set[Argument]:
+        """
+        Generates all possible arguments in the ABA framework based on the rules, assumptions, and contraries.
+        """
         arg_count = 1
         arguments_by_claim = defaultdict(set)
         queue = deque()
@@ -103,8 +106,16 @@ class ABAFramework:
                         arg_count += 1
 
         # Collect all generated arguments
-        all_arguments = set().union(*arguments_by_claim.values())
+        self.arguments = set().union(*arguments_by_claim.values())
 
-        self.arguments = all_arguments  # possibly remove this line
-
-        return all_arguments
+    def generate_attacks(self) -> set[tuple[Argument, Argument]]:
+        """
+        Generates all possible attacks between arguments based on the contraries in the ABA framework.
+        """
+        attacks: set[tuple[Argument, Argument]] = set()
+        for arg1 in self.arguments:
+            for arg2 in self.arguments:
+                for contrary in self.contraries:
+                    if arg1.claim == contrary.contrary_attacker and contrary.contraried_literal in arg2.leaves:
+                        attacks.add((arg1, arg2))
+        return attacks
