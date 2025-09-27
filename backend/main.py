@@ -37,38 +37,28 @@ def build_aba_framework(doc_path: str) -> ABAFramework:
     contraries: Set[Contrary] = set()
     assumptions: Set[Literal] = set()
 
-    # -----------------------
     # Language: build Literal objects
-    # -----------------------
     for lit in language_parse:
         language[lit] = Literal(lit)
     language_set: Set[Literal] = set(language.values())
 
-    # -----------------------
     # Rules: convert parsed structure into Rule objects
-    # -----------------------
     for rule in rules_parse:
-        r_id = next(iter(rule))                 # Rule identifier, e.g., 'r1'
-        head = next(iter(rule[r_id]))           # Head of the rule
-        body_atoms = rule[r_id][head]           # Body literals as set of names
+        r_id = next(iter(rule))                 
+        head = next(iter(rule[r_id]))           
+        body_atoms = rule[r_id][head]           
         body_literals = {language[i] for i in body_atoms if i in language}
         rules.add(Rule(r_id, language[head], body_literals))
 
-    # -----------------------
     # Contraries: build Contrary objects
-    # -----------------------
     for lit1, lit2 in contraries_parse:
         contraries.add(Contrary(language[lit1], language[lit2]))
 
-    # -----------------------
     # Assumptions: convert to set of Literal
-    # -----------------------
     for lit in assumptions_parse:
         assumptions.add(language[lit])
 
-    # -----------------------
     # Build ABA framework
-    # -----------------------
     aba_framework = ABAFramework(
         language=language_set,
         rules=rules,
@@ -85,8 +75,18 @@ def main():
     and check atomicity.
     """
     # Build the framework
-    aba_framework = build_aba_framework("./backend/doc.txt")
-    print(f"The ABA framework is: {aba_framework}")
+    aba_framework = build_aba_framework("./backend/td4b.txt")
+    print(f"The ABA framework is: \n{aba_framework}")
+
+
+
+    # Check if the ABA framework is atomic
+    is_atomic = aba_framework.is_aba_atomic()
+    print(f"\nIs the ABA framework atomic? {is_atomic}")
+
+    # Check if the ABA framework is atomic
+    aba_framework.make_aba_circular()
+    print(aba_framework)
 
     # Generate arguments
     aba_framework.generate_arguments()
@@ -99,10 +99,6 @@ def main():
     attacks = aba_framework.attacks
     print("\nThe generated attacks are:")
     print(attacks)
-
-    # Check if the ABA framework is atomic
-    is_atomic = aba_framework.is_aba_atomic()
-    print(f"\nIs the ABA framework atomic? {is_atomic}")
 
 
 if __name__ == "__main__":

@@ -32,5 +32,5 @@ class Rule:
                             for literal in self.body) if self.body else ''
         return f"{self.head} ← {body_str}"
 
-    def __hash__(self) -> int:
+    def __hash__(self):
         return hash((self.rule_name, self.head, frozenset(self.body)))
