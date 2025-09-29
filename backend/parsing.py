@@ -147,11 +147,11 @@ def parse_doc(path: str) -> Tuple[
 
 
 if __name__ == "__main__":
-    language, assumptions, contraries, rules, preferences = parse_doc("./backend/doc.txt")
+    language, assumptions, contraries, rules, preferences = parse_doc(
+        "./backend/doc.txt")
 
     print("Language:", language)
     print("Assumptions:", assumptions)
     print("Contraries:", contraries)
     print("Rules:", rules)
     print("Preferences:", preferences)
-    

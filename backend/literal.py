@@ -21,3 +21,6 @@ class Literal:
 
     def __hash__(self) -> int:
         return hash((self.literal_name, self.is_neg))
+
+    def __repr__(self) -> str:
+        return f"{'¬' if self.is_neg else ''}{self.literal_name}"

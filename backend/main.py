@@ -29,7 +29,8 @@ def build_aba_framework(doc_path: str) -> ABAFramework:
         True
     """
     # Parse the document
-    language_parse, assumptions_parse, contraries_parse, rules_parse, preferences_parse = parse_doc(doc_path)
+    language_parse, assumptions_parse, contraries_parse, rules_parse, preferences_parse = parse_doc(
+        doc_path)
 
     # Initialize containers
     language: Dict[str, Literal] = {}
@@ -44,9 +45,9 @@ def build_aba_framework(doc_path: str) -> ABAFramework:
 
     # Rules: convert parsed structure into Rule objects
     for rule in rules_parse:
-        r_id = next(iter(rule))                 
-        head = next(iter(rule[r_id]))           
-        body_atoms = rule[r_id][head]           
+        r_id = next(iter(rule))
+        head = next(iter(rule[r_id]))
+        body_atoms = rule[r_id][head]
         body_literals = {language[i] for i in body_atoms if i in language}
         rules.add(Rule(r_id, language[head], body_literals))
 
@@ -75,9 +76,8 @@ def main():
     and check atomicity.
     """
     # Build the framework
-    aba_framework = build_aba_framework("./backend/atomic.txt")
+    aba_framework = build_aba_framework("./backend/data/atomic.txt")
     print(f"\n ------- ABA framework -------\n {aba_framework}")
-
 
     aba_framework.transform_aba()
     print(aba_framework)

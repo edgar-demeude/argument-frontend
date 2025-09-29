@@ -6,6 +6,7 @@ from attacks import Attacks
 from collections import deque, defaultdict
 from itertools import product
 from pyvis.network import Network
+from itertools import chain, combinations
 
 
 class ABAFramework:
@@ -30,6 +31,8 @@ class ABAFramework:
                                ] = preferences if preferences is not None else {}
         self.arguments: set[Argument] = set()
         self.attacks: set[Attacks] = set()
+        self.normal_attacks: set[Attacks] = set()
+        self.reverse_attacks: set[Attacks] = set()
 
     def __eq__(self, other: object) -> bool:
         """
@@ -51,8 +54,10 @@ class ABAFramework:
         """
         language_str = ', '.join(str(literal) for literal in self.language)
         rules_str = '\n'.join(str(rule) for rule in self.rules)
-        assumptions_str = ', '.join(str(literal) for literal in self.assumptions)
-        contraries_str = ', '.join(str(contrary) for contrary in self.contraries)
+        assumptions_str = ', '.join(str(literal)
+                                    for literal in self.assumptions)
+        contraries_str = ', '.join(str(contrary)
+                                   for contrary in self.contraries)
 
         result = [
             f"L = {{{language_str}}}",
@@ -69,7 +74,8 @@ class ABAFramework:
             result.append(f"PREF :\n{preferences_str}")
 
         if self.arguments:
-            arguments_str = '\n'.join(str(argument) for argument in self.arguments)
+            arguments_str = '\n'.join(str(argument)
+                                      for argument in self.arguments)
             result.append(f"ARGS :\n{arguments_str}")
 
         return '\n'.join(result)
@@ -144,7 +150,6 @@ class ABAFramework:
                     if arg1.claim == contrary.contrary_attacker and contrary.contraried_literal in arg2.leaves:
                         self.attacks.add(Attacks(arg1, arg2))
 
-
     def transform_aba(self) -> None:
         """
         Transforms the ABA framework to ensure it is both non-circular and atomic.
@@ -185,7 +190,7 @@ class ABAFramework:
                 L = {a, b, x}
                 A = {a, b}
                 R = { r1: a <- x }
-            
+
             After _make_aba_atomic():
                 L = {a, b, x, xd, xnd}
                 A = {a, b, xd, xnd}
@@ -238,7 +243,7 @@ class ABAFramework:
             if rule.body and not all(lit in self.assumptions for lit in rule.body):
                 return False
         return True
-    
+
     def is_aba_circular(self) -> bool:
         """
         Checks if the ABA framework is circular by detecting cycles in the rule dependency graph.
@@ -290,9 +295,7 @@ class ABAFramework:
                 if has_cycle(lit, visited, set()):
                     return True  # Cycle found
         return False  # No cycles
-        
 
-    
     def _make_aba_not_circular(self) -> None:
         """
         Transforms the ABA framework to a non-circular one by renaming heads and bodies of rules.
@@ -323,10 +326,9 @@ class ABAFramework:
                 New rules:
                     y  <- y1
                     x  <-  x1
-                    x1 <- a  
-                    x  <- a  
+                    x1 <- a
+                    x  <- a
         """
-    
 
         k = len(self.language) - len(self.assumptions)
         new_language = set(self.language)
@@ -354,18 +356,51 @@ class ABAFramework:
                     new_rule_name = f"{rule.rule_name}_{i+1}"
                     new_rules.add(Rule(new_rule_name, new_head, new_body))
 
-
         self.language = new_language
         self.rules = new_rules
-    
 
+    def _generate_assumption_combinations(self) -> list[set[Literal]]:
+        """
+        Generates all possible combinations of assumptions in the ABA framework.
+
+        Example:
+            If the assumptions are {a, b, c}, the generated combinations will be:
+            {
+                {a, b, c},
+                {a, b},
+                {a, c},
+                {b, c},
+                {a},
+                {b},
+                {c},
+                {}
+            }
+        Returns:
+            set[frozenset[Literal]]: An unordered set containing every subset
+            (as a frozenset) of the assumptions, including the empty set.
+
+        Notes:
+            - We must use frozenset because regular sets are unhashable and
+              cannot be members of another set.
+        """
+        assumptions_list = list(self.assumptions)
+        all_combos: list[set[Literal]] = []
+
+        for r in range(len(assumptions_list) + 1):
+            for combo in combinations(assumptions_list, r):
+                all_combos.append(set(combo))
+
+        return all_combos
+
+    def generate_normal_reverse_attacks(self):
+        pass
 
     def plot_attack_graph(self, output_html="attack_graph.html"):
         """
         Generates a directed graph from the attacks in the ABA framework and plots it using pyvis.
 
         Args:
-            output_html (str): The filename for the output HTML visualization.
+            output_html(str): The filename for the output HTML visualization.
         """
         # Ensure attacks are generated
         if not hasattr(self, "attacks") or not self.attacks:
@@ -375,7 +410,7 @@ class ABAFramework:
 
         def clean_label(arg):
             """
-            Extracts only the argument ID (e.g., A1, A2) from the string representation.
+            Extracts only the argument ID(e.g., A1, A2) from the string representation.
             """
             raw = str(arg)
             if raw.startswith("[") and "]" in raw:
@@ -395,7 +430,3 @@ class ABAFramework:
 
         net.write_html(output_html)
         print(f"Attack graph saved to {output_html}")
-
-
-
-
