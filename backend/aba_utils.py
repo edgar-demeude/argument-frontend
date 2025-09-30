@@ -32,7 +32,107 @@ def format_attack(attack) -> str:
     return f"{{{attacker_leaves}}} attacks {{{target_leaves}}}"
 
 
+def format_assumption_set(S: frozenset) -> str:
+    """
+    Format an assumption set (frozenset) as a string like "{a,b}" or "{}" if empty.
+    """
+    if not S:
+        return "{}"
+    return "{" + ",".join(str(lit) for lit in sorted(S, key=str)) + "}"
+
+
 def print_aba_plus_results(aba_framework):
+    """
+    Print ABA+ framework results including:
+    - all assumption combinations,
+    - normal attacks (between assumption sets),
+    - reverse attacks (between assumption sets),
+    - verification of atomicity (all arguments only contain assumptions).
+    """
+    # ---- Assumption combinations ----
+    print("\n ------- Assumption Combinations -------")
+    print(f"Total combinations: {len(aba_framework.assumption_combinations)}")
+    for i, combo in enumerate(aba_framework.assumption_combinations[:10], 1):
+        combo_str = format_assumption_set(frozenset(combo))
+        print(f"  {i}. {combo_str}")
+    if len(aba_framework.assumption_combinations) > 10:
+        print(f"  ... and {len(aba_framework.assumption_combinations) - 10} more")
+
+    # ---- Normal attacks ----
+    print("\n ------- Normal Attacks (by assumption sets) -------")
+    sorted_normal = sorted(aba_framework.normal_attacks,
+                           key=lambda a: (sorted(str(x) for x in a[0]),
+                                          sorted(str(x) for x in a[1])))
+    for attack in sorted_normal[:10]:
+        print(f"  {format_assumption_set(attack[0])} attacks {format_assumption_set(attack[1])}")
+    if len(aba_framework.normal_attacks) > 10:
+        print(f"  ... and {len(aba_framework.normal_attacks) - 10} more")
+
+    # ---- Reverse attacks ----
+    print("\n ------- Reverse Attacks (by assumption sets) -------")
+    sorted_reverse = sorted(aba_framework.reverse_attacks,
+                            key=lambda a: (sorted(str(x) for x in a[0]),
+                                           sorted(str(x) for x in a[1])))
+    for attack in sorted_reverse[:10]:
+        print(f"  {format_assumption_set(attack[0])} attacks {format_assumption_set(attack[1])}")
+    if len(aba_framework.reverse_attacks) > 10:
+        print(f"  ... and {len(aba_framework.reverse_attacks) - 10} more")
+
+    # ---- Verification ----
+    print("\n ------- Verification -------")
+    non_assumption_args = [arg for arg in aba_framework.arguments
+                           if not all(leaf in aba_framework.assumptions for leaf in arg.leaves)]
+    if non_assumption_args:
+        print(f"WARNING: Found {len(non_assumption_args)} arguments with non-assumptions!")
+        for arg in non_assumption_args[:5]:
+            leaves_str = ",".join(str(l) for l in sorted(arg.leaves, key=str))
+            print(f"  {{{leaves_str}}} - contains non-assumptions: {arg.leaves - aba_framework.assumptions}")
+    else:
+        print("✓ All arguments contain only assumptions (framework is atomic)")
+
+    """
+    Print ABA+ framework results including assumption combinations,
+    normal attacks, and reverse attacks.
+    
+    Args:
+        aba_framework: The ABA framework with ABA+ generated
+    """
+    print("\n ------- Assumption Combinations -------")
+    print(f"Total combinations: {len(aba_framework.assumption_combinations)}")
+    for i, combo in enumerate(aba_framework.assumption_combinations[:10], 1):
+        combo_str = format_assumption_set(frozenset(combo))
+        print(f"  {i}. {combo_str}")
+    if len(aba_framework.assumption_combinations) > 10:
+        print(f"  ... and {len(aba_framework.assumption_combinations) - 10} more")
+
+    print("\n ------- Normal Attacks (by assumption sets) -------")
+    # normal_attacks are tuples: (frozenset(attacker_set), frozenset(target_set))
+    sorted_normal = sorted(aba_framework.normal_attacks,
+                           key=lambda a: (sorted(str(x) for x in a[0]), sorted(str(x) for x in a[1])))
+    for attack in sorted_normal[:10]:
+        print(f"  {format_assumption_set(attack[0])} attacks {format_assumption_set(attack[1])}")
+    if len(aba_framework.normal_attacks) > 10:
+        print(f"  ... and {len(aba_framework.normal_attacks) - 10} more")
+
+    print("\n ------- Reverse Attacks (by assumption sets) -------")
+    sorted_reverse = sorted(aba_framework.reverse_attacks,
+                            key=lambda a: (sorted(str(x) for x in a[0]), sorted(str(x) for x in a[1])))
+    for attack in sorted_reverse[:10]:
+        print(f"  {format_assumption_set(attack[0])} attacks {format_assumption_set(attack[1])}")
+    if len(aba_framework.reverse_attacks) > 10:
+        print(f"  ... and {len(aba_framework.reverse_attacks) - 10} more")
+
+    print("\n ------- Verification -------")
+    non_assumption_args = [arg for arg in aba_framework.arguments
+                           if not all(leaf in aba_framework.assumptions for leaf in arg.leaves)]
+    if non_assumption_args:
+        print(f"WARNING: Found {len(non_assumption_args)} arguments with non-assumptions!")
+        for arg in non_assumption_args[:5]:
+            leaves_str = ",".join(str(l) for l in sorted(arg.leaves, key=str))
+            print(f"  {{{leaves_str}}} - contains non-assumptions: {arg.leaves - aba_framework.assumptions}")
+    else:
+        print("✓ All arguments contain only assumptions (framework is atomic)")
+
     """
     Print ABA+ framework results including assumption combinations,
     normal attacks, and reverse attacks.

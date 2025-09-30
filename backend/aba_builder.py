@@ -98,12 +98,6 @@ def prepare_aba_plus_framework(aba_framework: ABAFramework) -> ABAFramework:
     Returns:
         ABAFramework: The prepared framework (modified in place)
     """
-    # Ensure framework is atomic before ABA+
-    if not aba_framework.is_aba_atomic():
-        print("\nTransforming to atomic framework for ABA+...")
-        aba_framework._make_aba_atomic()
-        print("Framework is now atomic\n")
-        print(aba_framework)
     
     # Generate arguments for atomic framework
     print("\nGenerating arguments for atomic framework...")
