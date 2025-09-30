@@ -1,17 +1,13 @@
 import re
 from typing import List, Tuple, Dict, Set
 
-
 def _parse_list(content: str) -> List[str]:
     """
     Parse a string representing a list of literals into a Python list of strings.
-
     Args:
         content (str): A string in the form "[a,b,c]" or "a,b,c".
-
     Returns:
         List[str]: A list of literal identifiers as strings.
-
     Examples:
         >>> _parse_list("[a,b,c]")
         ['a', 'b', 'c']
@@ -27,17 +23,13 @@ def _parse_list(content: str) -> List[str]:
         return []
     return [x.strip() for x in content.split(",") if x.strip()]
 
-
 def _parse_rule_line(line: str) -> Dict[str, Dict[str, Set[str]]]:
     """
     Parse a single rule line of the form [rX]: head <- body.
-
     Args:
         line (str): Rule string, e.g. "[r1]: p <- q,a".
-
     Returns:
         Dict[str, Dict[str, Set[str]]]: Mapping of rule ID to {head: set of body literals}.
-
     Examples:
         >>> _parse_rule_line("[r1]: p <- q,a")
         {'r1': {'p': {'q', 'a'}}}
@@ -53,47 +45,57 @@ def _parse_rule_line(line: str) -> Dict[str, Dict[str, Set[str]]]:
         return {r_id: {head: body_atoms}}
     return {}
 
-
-def _parse_pref_line(line: str) -> Tuple[List[str], str, List[str]]:
+def _parse_pref_line(line: str) -> Dict[str, Set[str]]:
     """
-    Parse a preference line of the form PREF: a,b > c,d, or using < or =.
-
+    Parse a preference line of the form PREF: a,b > c,d > e > g > f
+    
     Args:
         line (str): Preference string starting with "PREF:".
-
+    
     Returns:
-        Tuple[List[str], str, List[str]]: (left literals, operator, right literals)
-
+        Dict[str, Set[str]]: Dictionary mapping each element to all elements 
+                             that come after it in the preference chain.
+    
     Examples:
-        >>> _parse_pref_line("PREF: a,b > c,d")
-        (['a', 'b'], '>', ['c', 'd'])
-        >>> _parse_pref_line("PREF: x < y,z")
-        (['x'], '<', ['y', 'z'])
-        >>> _parse_pref_line("PREF: a = b,c")
-        (['a'], '=', ['b', 'c'])
+        >>> _parse_pref_line("PREF: a,b > c,d > e > g > f")
+        {'a': {'c', 'd', 'e', 'g', 'f'}, 'b': {'c', 'd', 'e', 'g', 'f'}, 
+         'c': {'e', 'g', 'f'}, 'd': {'e', 'g', 'f'}, 'e': {'g', 'f'}, 'g': {'f'}}
     """
     content = line.split(":", 1)[1].strip()
-    for op in [">", "<", "="]:
-        if op in content:
-            left, right = content.split(op, 1)
-            return _parse_list(left), op, _parse_list(right)
-    return [], "", []
-
+    
+    # Split by '>' to get preference groups
+    groups = [group.strip() for group in content.split(">")]
+    
+    # Parse each group into a list of literals
+    parsed_groups = [_parse_list(group) for group in groups]
+    
+    # Build the preference dictionary
+    pref_dict = {}
+    
+    for i, current_group in enumerate(parsed_groups):
+        # Collect all literals that come after this group
+        less_preferred = set()
+        for j in range(i + 1, len(parsed_groups)):
+            less_preferred.update(parsed_groups[j])
+        
+        # Map each literal in current group to all less preferred literals
+        for literal in current_group:
+            pref_dict[literal] = less_preferred
+    
+    return pref_dict
 
 def parse_doc(path: str) -> Tuple[
     List[str],
     List[str],
     List[Tuple[str, str]],
     List[Dict[str, Dict[str, Set[str]]]],
-    List[Tuple[List[str], str, List[str]]]
+    List[Dict[str, Set[str]]]
 ]:
     """
     Parse a structured document containing literals, assumptions, contraries,
     rules, and preferences.
-
     Args:
         path (str): Path to the text file to parse.
-
     Returns:
         Tuple containing:
         - language (List[str]): List of all literals in the language.
@@ -101,31 +103,31 @@ def parse_doc(path: str) -> Tuple[
         - contraries (List[Tuple[str, str]]): List of contrary pairs (literal, contrary).
         - rules (List[Dict[str, Dict[str, Set[str]]]]): List of rules,
           each rule is {rule_id: {head: set of body literals}}.
-        - preferences (List[Tuple[List[str], str, List[str]]]): List of preferences,
-          each preference is a tuple (left literals, operator, right literals).
-
+        - preferences (List[Dict[str, Set[str]]]): List of preference dictionaries,
+          each mapping literals to sets of less preferred literals.
     Examples:
         >>> # doc.txt content:
         >>> # L: [a,b,c]
         >>> # A: [a,b]
         >>> # C(a): b
         >>> # [r1]: p <- q,a
-        >>> # PREF: a,b > c
+        >>> # PREF: a,b > c,d > e > g > f
         >>> parse_doc("doc.txt")
-        (['a','b','c'], ['a','b'], [('a','b')], [{'r1': {'p': {'q','a'}}}], [(['a','b'], '>', ['c'])])
+        (['a','b','c'], ['a','b'], [('a','b')], [{'r1': {'p': {'q','a'}}}], 
+         [{'a': {'c','d','e','g','f'}, 'b': {'c','d','e','g','f'}, ...}])
     """
     language: List[str] = []
     assumptions: List[str] = []
     contraries: List[Tuple[str, str]] = []
     rules: List[Dict[str, Dict[str, Set[str]]]] = []
-    preferences: List[Tuple[List[str], str, List[str]]] = []
-
+    preferences: List[Dict[str, Set[str]]] = []
+    
     with open(path, "r") as f:
         for line in f:
             line = line.strip()
             if not line:
                 continue
-
+            
             if line.startswith("L:"):
                 language = _parse_list(line.split(":", 1)[1])
             elif line.startswith("A:"):
@@ -139,17 +141,15 @@ def parse_doc(path: str) -> Tuple[
                 if rule:
                     rules.append(rule)
             elif line.startswith("PREF:"):
-                pref = _parse_pref_line(line)
-                if pref != ([], "", []):
-                    preferences.append(pref)
-
+                pref_dict = _parse_pref_line(line)
+                if pref_dict:
+                    preferences.append(pref_dict)
+    
     return language, assumptions, contraries, rules, preferences
-
 
 if __name__ == "__main__":
     language, assumptions, contraries, rules, preferences = parse_doc(
         "./backend/doc.txt")
-
     print("Language:", language)
     print("Assumptions:", assumptions)
     print("Contraries:", contraries)

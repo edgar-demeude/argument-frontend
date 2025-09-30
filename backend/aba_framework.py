@@ -18,8 +18,12 @@ class ABAFramework:
         rules (set[Rule]): The set of all rules in the framework.
         assumptions (set[Literal]): The set of all assumptions in the framework.
         contraries (set[Contrary]): The set of all contrary relationships in the framework.
-        preferences (dict[Literal, set[Literal]]): A mapping of literals to their preferred literals.
+        preferences (dict[Literal, set[Literal]]): A mapping of literals to their less preferred literals.
         arguments (set[Argument]): The set of all arguments in the framework.
+        attacks (set[Attacks]): The set of all standard attacks in the framework.
+        normal_attacks (set[Attacks]): The set of normal attacks in ABA+ (not defeated by preferences).
+        reverse_attacks (set[Attacks]): The set of reverse attacks in ABA+ (reversed due to preferences).
+        assumption_combinations (list[set[Literal]]): All possible subsets of assumptions.
     """
 
     def __init__(self, language: set[Literal], rules: set[Rule], assumptions: set[Literal], contraries: set[Contrary], preferences: dict[Literal, set[Literal]] = None):
@@ -27,12 +31,12 @@ class ABAFramework:
         self.rules: set[Rule] = rules
         self.assumptions: set[Literal] = assumptions
         self.contraries: set[Contrary] = contraries
-        self.preferences: dict[Literal, set[Literal]
-                               ] = preferences if preferences is not None else {}
+        self.preferences: dict[Literal, set[Literal]] = preferences if preferences is not None else {}
         self.arguments: set[Argument] = set()
         self.attacks: set[Attacks] = set()
         self.normal_attacks: set[Attacks] = set()
         self.reverse_attacks: set[Attacks] = set()
+        self.assumption_combinations: list[set[Literal]] = []
 
     def __eq__(self, other: object) -> bool:
         """
@@ -52,12 +56,10 @@ class ABAFramework:
         Returns a string representation of the ABAFramework, including its language, rules, assumptions, contraries,
         and, if present, preferences and arguments.
         """
-        language_str = ', '.join(str(literal) for literal in self.language)
-        rules_str = '\n'.join(str(rule) for rule in self.rules)
-        assumptions_str = ', '.join(str(literal)
-                                    for literal in self.assumptions)
-        contraries_str = ', '.join(str(contrary)
-                                   for contrary in self.contraries)
+        language_str = ', '.join(str(literal) for literal in sorted(self.language, key=str))
+        rules_str = '\n'.join(str(rule) for rule in sorted(self.rules, key=str))
+        assumptions_str = ', '.join(str(literal) for literal in sorted(self.assumptions, key=str))
+        contraries_str = ', '.join(str(contrary) for contrary in sorted(self.contraries, key=str))
 
         result = [
             f"L = {{{language_str}}}",
@@ -67,16 +69,17 @@ class ABAFramework:
         ]
 
         if self.preferences:
+            # Sort for consistent output
+            sorted_prefs = sorted(self.preferences.items(), key=lambda x: str(x[0]))
             preferences_str = '\n'.join(
-                f"{str(literal)}: {', '.join(str(pref) for pref in prefs)}"
-                for literal, prefs in self.preferences.items()
+                f"  {str(literal)} > {{{', '.join(str(p) for p in sorted(prefs, key=str))}}}"
+                for literal, prefs in sorted_prefs
             )
-            result.append(f"PREF :\n{preferences_str}")
+            result.append(f"PREFERENCES:\n{preferences_str}")
 
         if self.arguments:
-            arguments_str = '\n'.join(str(argument)
-                                      for argument in self.arguments)
-            result.append(f"ARGS :\n{arguments_str}")
+            arguments_str = '\n'.join(str(argument) for argument in sorted(self.arguments, key=str))
+            result.append(f"ARGS:\n{arguments_str}")
 
         return '\n'.join(result)
 
@@ -84,8 +87,20 @@ class ABAFramework:
         """
         Returns a hash value for the ABAFramework, allowing it to be used in sets and as dictionary keys.
         """
-
         return hash((frozenset(self.language), frozenset(self.rules), frozenset(self.assumptions), frozenset(self.contraries)))
+
+    def is_preferred(self, lit1: Literal, lit2: Literal) -> bool:
+        """
+        Check if lit1 is preferred over lit2 according to the preference relation.
+        
+        Args:
+            lit1: The first literal
+            lit2: The second literal
+            
+        Returns:
+            bool: True if lit1 > lit2 (lit1 is preferred over lit2), False otherwise
+        """
+        return lit1 in self.preferences and lit2 in self.preferences[lit1]
 
     def generate_arguments(self) -> None:
         """
@@ -97,14 +112,14 @@ class ABAFramework:
         arguments_by_claim = defaultdict(set)
         queue = deque()
 
-        # Assumptions : {a} ⊢ a
+        # Assumptions: {a} ⊢ a
         for a in self.assumptions:
             arg = Argument(f"A{arg_count}", a, {a})
             arguments_by_claim[a].add(arg)
             queue.append(arg)
             arg_count += 1
 
-        # Empty body : {} ⊢ head
+        # Empty body: {} ⊢ head
         for rule in self.rules:
             if not rule.body:
                 arg = Argument(f"A{arg_count}", rule.head, set())
@@ -127,8 +142,7 @@ class ABAFramework:
                 body_arg_lists = [arguments_by_claim[lit] for lit in rule.body]
                 for combo in product(*body_arg_lists):
                     new_leaves = set().union(*(arg.leaves for arg in combo))
-                    new_arg = Argument(
-                        f"A{arg_count}", rule.head, new_leaves)
+                    new_arg = Argument(f"A{arg_count}", rule.head, new_leaves)
 
                     if new_arg not in arguments_by_claim[rule.head]:
                         arguments_by_claim[rule.head].add(new_arg)
@@ -150,6 +164,7 @@ class ABAFramework:
                     if arg1.claim == contrary.contrary_attacker and contrary.contraried_literal in arg2.leaves:
                         self.attacks.add(Attacks(arg1, arg2))
 
+    
     def transform_aba(self) -> None:
         """
         Transforms the ABA framework to ensure it is both non-circular and atomic.
@@ -184,18 +199,6 @@ class ABAFramework:
                 - Add contraries: Contrary(xd, xnd) and Contrary(xnd, x).
 
         After this transformation, all rule bodies contain only assumptions.
-
-        Example:
-            Original framework:
-                L = {a, b, x}
-                A = {a, b}
-                R = { r1: a <- x }
-
-            After _make_aba_atomic():
-                L = {a, b, x, xd, xnd}
-                A = {a, b, xd, xnd}
-                R = { a <- xd }
-                Contraries = { xd̄ = xnd, xnd̄ = x }
         """
         new_language = set(self.language)
         new_assumptions = set(self.assumptions)
@@ -250,13 +253,6 @@ class ABAFramework:
 
         Returns:
             bool: True if the framework is circular (i.e., contains a cycle), False otherwise.
-
-        Procedure:
-            - The dependency graph is constructed where each node is a literal.
-            - For each rule, an edge is added from every literal in the rule's body to the rule's head.
-            - A cycle in this graph means there is a sequence of rules such that a literal can be derived from itself,
-              directly or indirectly, which is the definition of circularity in ABA frameworks.
-            - The function uses depth-first search (DFS) to detect cycles in the graph.
         """
         # Build adjacency list: for each literal, store the set of literals it can reach via rules
         adj = {lit: set() for lit in self.language}
@@ -265,17 +261,7 @@ class ABAFramework:
                 adj[body_lit].add(rule.head)
 
         def has_cycle(lit, visited, stack):
-            """
-            Helper function to perform DFS and detect cycles.
-
-            Args:
-                lit: The current literal being visited.
-                visited: Set of literals that have been fully explored.
-                stack: Set of literals in the current DFS path (recursion stack).
-
-            Returns:
-                True if a cycle is detected starting from 'lit', False otherwise.
-            """
+            """Helper function to perform DFS and detect cycles."""
             visited.add(lit)
             stack.add(lit)
             for neighbor in adj.get(lit, []):
@@ -299,37 +285,7 @@ class ABAFramework:
     def _make_aba_not_circular(self) -> None:
         """
         Transforms the ABA framework to a non-circular one by renaming heads and bodies of rules.
-
-        Procedure:
-            1. Compute k = |language| - |assumptions|.
-            2. For each atomic rule (body is empty or only contains assumptions):
-                - Create new rules with heads renamed as x1, x2, ..., x(k-1) with the same body.
-                - Keep the original atomic rule.
-            3. For each non-atomic rule (body contains non-assumptions):
-                - Create k-1 new rules with heads renamed as x2, x3, ... and bodies renamed by iteration index.
-                - In the last iteration (i = k-1), keep the original head but update the body with the last renamed literals.
-            4. Update the framework's language and rules with the new transformed rules.
-
-        After this transformation, circular dependencies in arguments are eliminated.
-        The function modifies the ABAFramework in-place and does not return any value.
-
-        Example:
-            Original framework:
-                Language: {a, b, x, y}
-                Assumptions: {a, b}
-                Rules:
-                    r1: y <- y
-                    r2: x <- x
-                    r3: x <- a
-
-            After _make_aba_not_circular():
-                New rules:
-                    y  <- y1
-                    x  <-  x1
-                    x1 <- a
-                    x  <- a
         """
-
         k = len(self.language) - len(self.assumptions)
         new_language = set(self.language)
         new_rules = set()
@@ -339,9 +295,9 @@ class ABAFramework:
                 # Atomic rule: create x1, x2, ..., x(k-1)
                 for i in range(1, k):
                     new_head = Literal(f"{rule.head}{i}")
-                    new_body = set(rule.body)  # <<< fix: define new_body here
+                    new_body = set(rule.body)
                     new_language.add(new_head)
-                    new_rule_name = f"{rule.rule_name}_{i+1}"  # unique name
+                    new_rule_name = f"{rule.rule_name}_{i+1}"
                     new_rules.add(Rule(new_rule_name, new_head, new_body))
                 new_rules.add(rule)  # Keep original
 
@@ -359,42 +315,6 @@ class ABAFramework:
         self.language = new_language
         self.rules = new_rules
 
-    def _generate_assumption_combinations(self) -> list[set[Literal]]:
-        """
-        Generates all possible combinations of assumptions in the ABA framework.
-
-        Example:
-            If the assumptions are {a, b, c}, the generated combinations will be:
-            {
-                {a, b, c},
-                {a, b},
-                {a, c},
-                {b, c},
-                {a},
-                {b},
-                {c},
-                {}
-            }
-        Returns:
-            set[frozenset[Literal]]: An unordered set containing every subset
-            (as a frozenset) of the assumptions, including the empty set.
-
-        Notes:
-            - We must use frozenset because regular sets are unhashable and
-              cannot be members of another set.
-        """
-        assumptions_list = list(self.assumptions)
-        all_combos: list[set[Literal]] = []
-
-        for r in range(len(assumptions_list) + 1):
-            for combo in combinations(assumptions_list, r):
-                all_combos.append(set(combo))
-
-        return all_combos
-
-    def generate_normal_reverse_attacks(self):
-        pass
-
     def plot_attack_graph(self, output_html="attack_graph.html"):
         """
         Generates a directed graph from the attacks in the ABA framework and plots it using pyvis.
@@ -409,9 +329,7 @@ class ABAFramework:
         net = Network(directed=True, notebook=False)
 
         def clean_label(arg):
-            """
-            Extracts only the argument ID(e.g., A1, A2) from the string representation.
-            """
+            """Extracts only the argument ID (e.g., A1, A2) from the string representation."""
             raw = str(arg)
             if raw.startswith("[") and "]" in raw:
                 return raw[1:raw.index("]")]  # remove [ and ]
@@ -430,3 +348,157 @@ class ABAFramework:
 
         net.write_html(output_html)
         print(f"Attack graph saved to {output_html}")
+
+
+    def _generate_assumption_combinations(self) -> list[set[Literal]]:
+        """
+        Generates all possible combinations of assumptions in the ABA framework.
+
+        Returns:
+            list[set[Literal]]: A list containing every subset of the assumptions, 
+            including the empty set.
+        """
+        assumptions_list = list(self.assumptions)
+        all_combos: list[set[Literal]] = []
+
+        for r in range(len(assumptions_list) + 1):
+            for combo in combinations(assumptions_list, r):
+                all_combos.append(set(combo))
+
+        return all_combos
+    
+    def generate_normal_reverse_attacks(self) -> None:
+        """
+        Generates normal and reverse attacks for ABA+ framework with preferences.
+        
+        For each potential attack from arg1 to arg2:
+        - Normal attack: arg1 attacks arg2 if there exists x in arg1.leaves and y in arg2.leaves
+          such that x is NOT preferred over any element in arg2.leaves
+        - Reverse attack: arg2 attacks arg1 if there exists y in arg2.leaves that is preferred
+          over some x in arg1.leaves
+        """
+        self.normal_attacks.clear()
+        self.reverse_attacks.clear()
+        
+        for arg1 in self.arguments:
+            for arg2 in self.arguments:
+                for contrary in self.contraries:
+                    if arg1.claim == contrary.contrary_attacker and contrary.contraried_literal in arg2.leaves:
+                        # Check if this should be a normal or reverse attack
+                        is_normal = True
+                        
+                        # Check if any assumption in arg1 is preferred over all assumptions in arg2
+                        for x in arg1.leaves:
+                            if any(self.is_preferred(x, y) for y in arg2.leaves):
+                                is_normal = False
+                                break
+                        
+                        if is_normal:
+                            self.normal_attacks.add(Attacks(arg1, arg2))
+                        else:
+                            # This is a reverse attack
+                            self.reverse_attacks.add(Attacks(arg2, arg1))
+
+
+    def make_aba_plus(self) -> None:
+        """
+        Transforms the ABA framework into an ABA+ framework by:
+        1. Generating all assumption combinations
+        2. Generating normal and reverse attacks based on preferences
+        
+        This method populates:
+        - self.assumption_combinations: All possible subsets of assumptions
+        - self.normal_attacks: Attacks that are not defeated by preferences
+        - self.reverse_attacks: Attacks that are reversed due to preferences
+        """
+        print("\n ------- Generating ABA+ Framework -------\n")
+        
+        # Generate all assumption combinations
+        self.assumption_combinations = self._generate_assumption_combinations()
+        print(f"Generated {len(self.assumption_combinations)} assumption combinations")
+        
+        # Generate normal and reverse attacks based on preferences
+        self.generate_normal_reverse_attacks()
+        print(f"Generated {len(self.normal_attacks)} normal attacks")
+        print(f"Generated {len(self.reverse_attacks)} reverse attacks")
+        
+        print("\n ------- ABA+ Framework Ready -------\n")
+
+    
+    def plot_aba_plus_graph(self, output_html="aba_plus_graph.html"):
+        """
+        Generates a directed graph for the ABA+ framework with preferences.
+        Normal attacks are shown as solid lines, reverse attacks as dashed lines.
+        Nodes are labeled with their assumption sets (leaves).
+
+        Args:
+            output_html(str): The filename for the output HTML visualization.
+        """
+        # Ensure normal and reverse attacks are generated
+        if not hasattr(self, "normal_attacks") or not hasattr(self, "reverse_attacks"):
+            print("Warning: ABA+ attacks not generated. Call make_aba_plus() first.")
+            return
+
+        net = Network(directed=True, notebook=False, height="750px", width="100%")
+        
+        # Configure physics for better layout
+        net.set_options("""
+        {
+        "physics": {
+            "enabled": true,
+            "stabilization": {
+            "enabled": true,
+            "iterations": 200
+            }
+        }
+        }
+        """)
+
+        def get_arg_id(arg):
+            """Extracts the argument ID (e.g., A1, A2) from the string representation."""
+            raw = str(arg)
+            if raw.startswith("[") and "]" in raw:
+                return raw[1:raw.index("]")]
+            return raw
+        
+        def get_leaves_label(arg):
+            """Creates a label from the argument's leaves (assumptions)."""
+            if not arg.leaves:
+                return "{}"
+            # Sort leaves by their string representation for consistent ordering
+            sorted_leaves = sorted(arg.leaves, key=str)
+            leaves_str = ",".join(str(leaf) for leaf in sorted_leaves)
+            return f"{{{leaves_str}}}"  # Wrap in braces for set notation
+
+        # Add nodes with leaves as labels and full info in tooltip
+        for arg in self.arguments:
+            node_id = get_arg_id(arg)
+            leaves_label = get_leaves_label(arg)
+            # Use full argument string as tooltip for additional info
+            net.add_node(node_id, label=leaves_label, title=str(arg))
+
+        # Add normal attacks as solid edges
+        for attack in self.normal_attacks:
+            attacker = get_arg_id(attack.attacker)
+            target = get_arg_id(attack.target)
+            net.add_edge(attacker, target, 
+                        title="Normal Attack",
+                        color={'color': 'black'},
+                        dashes=False,
+                        width=2)
+
+        # Add reverse attacks as dashed edges
+        for attack in self.reverse_attacks:
+            attacker = get_arg_id(attack.attacker)
+            target = get_arg_id(attack.target)
+            net.add_edge(attacker, target,
+                        title="Reverse Attack (due to preferences)",
+                        color={'color': 'red'},
+                        dashes=True,
+                        width=2)
+
+        net.write_html(output_html)
+        print(f"ABA+ attack graph saved to {output_html}")
+        print(f"  - Normal attacks (solid black lines): {len(self.normal_attacks)}")
+        print(f"  - Reverse attacks (dashed red lines): {len(self.reverse_attacks)}")
+
