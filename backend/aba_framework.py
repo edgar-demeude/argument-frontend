@@ -4,9 +4,8 @@ from literal import Literal
 from rule import Rule
 from attacks import Attacks
 from collections import deque, defaultdict
-from itertools import product
+from itertools import product, combinations
 from pyvis.network import Network
-from itertools import chain, combinations
 
 
 class ABAFramework:
@@ -30,6 +29,7 @@ class ABAFramework:
         self.language: set[Literal] = language
         self.rules: set[Rule] = rules
         self.assumptions: set[Literal] = assumptions
+        self.base_assumptions: set[Literal] = assumptions
         self.contraries: set[Contrary] = contraries
         self.preferences: dict[Literal, set[Literal]] = preferences if preferences is not None else {}
         self.arguments: set[Argument] = set()
@@ -358,7 +358,7 @@ class ABAFramework:
             list[set[Literal]]: A list containing every subset of the assumptions, 
             including the empty set.
         """
-        assumptions_list = list(self.assumptions)
+        assumptions_list = list(self.base_assumptions)
         all_combos: list[set[Literal]] = []
 
         for r in range(len(assumptions_list) + 1):
@@ -366,39 +366,41 @@ class ABAFramework:
                 all_combos.append(set(combo))
 
         return all_combos
+
+
     
     def generate_normal_reverse_attacks(self) -> None:
         """
         Generates normal and reverse attacks for ABA+ framework with preferences.
         
         For each potential attack from arg1 to arg2:
-        - Normal attack: arg1 attacks arg2 if there exists x in arg1.leaves and y in arg2.leaves
-          such that x is NOT preferred over any element in arg2.leaves
-        - Reverse attack: arg2 attacks arg1 if there exists y in arg2.leaves that is preferred
-          over some x in arg1.leaves
+        - Normal attack: arg1 attacks arg2 if no preference reversal applies.
+        - Reverse attack: arg2 attacks arg1 if there exists y in arg2.leaves
+        and x in arg1.leaves such that y is strictly preferred over x.
         """
         self.normal_attacks.clear()
         self.reverse_attacks.clear()
         
         for arg1 in self.arguments:
+            print("\n\n\n------------",arg1)
             for arg2 in self.arguments:
                 for contrary in self.contraries:
                     if arg1.claim == contrary.contrary_attacker and contrary.contraried_literal in arg2.leaves:
-                        # Check if this should be a normal or reverse attack
-                        is_normal = True
-                        
-                        # Check if any assumption in arg1 is preferred over all assumptions in arg2
-                        for x in arg1.leaves:
-                            if any(self.is_preferred(x, y) for y in arg2.leaves):
-                                is_normal = False
-                                break
-                        
+
+                        # By default assume it's a normal attack
+                        is_normal = True  
+
+                        # If SOME y in target is strictly preferred over SOME x in attacker -> reverse
+                        if any(
+                            self.is_preferred(y, x)
+                            for y in arg2.leaves
+                            for x in arg1.leaves
+                        ):
+                            self.reverse_attacks.add(Attacks(arg2, arg1))
+                            is_normal = False
+
                         if is_normal:
                             self.normal_attacks.add(Attacks(arg1, arg2))
-                        else:
-                            # This is a reverse attack
-                            self.reverse_attacks.add(Attacks(arg2, arg1))
-
 
     def make_aba_plus(self) -> None:
         """

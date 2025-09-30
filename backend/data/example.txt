@@ -9,4 +9,4 @@ C(c): t
 [r3]: r <- b,c
 [r4]: t <- p,c
 [r5]: s <- t
-PREF: a,c > b
+PREF: a > b
