@@ -1,25 +1,20 @@
 "use client";
-
 import { useState } from "react";
-import { GraphData } from "./types";
+import { GraphData, GraphNode } from "./types";
 import { sampleCSV1, sampleCSV2, parseCSVString } from "./sampleCSV";
 
 interface GraphPanelProps {
-  graphData: GraphData;
   setGraphData: React.Dispatch<React.SetStateAction<GraphData>>;
   onAddRelation: (arg1: string, arg2: string) => void;
   loading: boolean;
-  selectedNode: any;
-  setSelectedNode: (node: any) => void;
+  selectedNode: GraphNode | null;
 }
 
 export default function GraphPanel({
-  graphData,
   setGraphData,
   onAddRelation,
   loading,
   selectedNode,
-  setSelectedNode,
 }: GraphPanelProps) {
   const [arg1, setArg1] = useState("");
   const [arg2, setArg2] = useState("");
@@ -48,7 +43,6 @@ export default function GraphPanel({
   return (
     <div className="w-1/4 bg-gray-800 p-4 overflow-y-auto text-white flex-shrink-0">
       <h2 className="text-xl font-bold mb-4">Controls</h2>
-
       <div className="space-y-2">
         <input
           type="text"
@@ -71,7 +65,6 @@ export default function GraphPanel({
         >
           {loading ? "Loading..." : "Add Relation"}
         </button>
-
         <div className="mt-4 space-y-2">
           <label className="block text-white font-semibold">Load Sample CSV:</label>
           <select
@@ -90,7 +83,6 @@ export default function GraphPanel({
           </button>
         </div>
       </div>
-
       {selectedNode && (
         <div className="mt-6 p-3 border rounded bg-gray-700 text-white shadow">
           <h3 className="font-bold text-lg">Node Details</h3>

@@ -44,15 +44,22 @@ Regulations may be needed,Responsible AI deployment increases public trust.,Supp
 Responsible AI deployment increases public trust,Adoption rates grow faster.,Support
 `;
 
-export function parseCSVString(csv: string) {
+interface CSVRow {
+  parent: string;
+  child: string;
+  relation: string;
+}
+
+export function parseCSVString(csv: string): CSVRow[] {
   const lines = csv.trim().split("\n");
   const header = lines.shift()?.split(",") || [];
+  
   return lines.map((line) => {
     const values = line.split(",");
-    const obj: any = {};
+    const obj: Record<string, string> = {};
     header.forEach((h, i) => {
       obj[h.trim()] = values[i].trim();
     });
-    return obj;
+    return obj as unknown as CSVRow;
   });
 }

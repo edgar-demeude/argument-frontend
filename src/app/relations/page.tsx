@@ -1,25 +1,23 @@
 "use client";
-
 import { useRef, useState } from "react";
 import GraphPanel from "./GraphPanel";
-import Graph3D from "./Graph3D";
-import { GraphData } from "./types";
+import Graph3D, { Graph3DRef } from "./Graph3D";
+import { GraphData, GraphNode } from "./types";
 
 // Définir l'URL de l'API en fonction de l'environnement
 const API_URL =
-  process.env.NEXT_PUBLIC_API_URL || "https://huggingface.co/spaces/Edgar-Demeude/argument-backend";
+  process.env.NEXT_PUBLIC_API_URL || "https://edgar-demeude-argument-backend.hf.space";
   // Local : http://127.0.0.1:8000/
 
 export default function RelationsPage() {
   const [graphData, setGraphData] = useState<GraphData>({ nodes: [], links: [] });
   const [loading, setLoading] = useState(false);
-  const [selectedNode, setSelectedNode] = useState<any>(null);
-  const graphRef = useRef<any>(null);
+  const [selectedNode, setSelectedNode] = useState<GraphNode | null>(null);
+  const graphRef = useRef<Graph3DRef>(null);
 
   const handleAddRelation = async (arg1: string, arg2: string) => {
     if (!arg1 || !arg2) return;
     setLoading(true);
-
     try {
       const res = await fetch(`${API_URL}/predict-text`, {
         method: "POST",
@@ -30,16 +28,13 @@ export default function RelationsPage() {
       setGraphData((prev) => {
         const nodes = [...prev.nodes];
         const links = [...prev.links];
-
         if (!nodes.find((n) => n.id === arg1)) nodes.push({ id: arg1, text: arg1 });
         if (!nodes.find((n) => n.id === arg2)) nodes.push({ id: arg2, text: arg2 });
-
         links.push({
           source: arg2,
           target: arg1,
           label: `${data.relation.predicted_label} (${(data.relation.probability * 100).toFixed(1)}%)`,
         });
-
         return { nodes, links };
       });
 
@@ -57,14 +52,11 @@ export default function RelationsPage() {
   return (
     <div className="flex h-screen">
       <GraphPanel
-        graphData={graphData}
         setGraphData={setGraphData}
         onAddRelation={handleAddRelation}
         loading={loading}
         selectedNode={selectedNode}
-        setSelectedNode={setSelectedNode}
       />
-
       <div className="flex-1 h-full">
         <Graph3D
           ref={graphRef}
