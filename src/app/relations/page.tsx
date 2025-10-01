@@ -5,6 +5,11 @@ import GraphPanel from "./GraphPanel";
 import Graph3D from "./Graph3D";
 import { GraphData } from "./types";
 
+// Définir l'URL de l'API en fonction de l'environnement
+const API_URL =
+  process.env.NEXT_PUBLIC_API_URL || "https://huggingface.co/spaces/Edgar-Demeude/argument-backend";
+  // Local : http://127.0.0.1:8000/
+
 export default function RelationsPage() {
   const [graphData, setGraphData] = useState<GraphData>({ nodes: [], links: [] });
   const [loading, setLoading] = useState(false);
@@ -16,7 +21,7 @@ export default function RelationsPage() {
     setLoading(true);
 
     try {
-      const res = await fetch("http://127.0.0.1:8000/predict-text", {
+      const res = await fetch(`${API_URL}/predict-text`, {
         method: "POST",
         body: new URLSearchParams({ arg1, arg2 }),
       });
