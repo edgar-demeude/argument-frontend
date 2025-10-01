@@ -1,142 +1,71 @@
 "use client";
 
-import { useState } from "react";
-import dynamic from "next/dynamic";
-
-// Charger react-force-graph côté client uniquement
-const ForceGraph2D = dynamic(
-  () => import("react-force-graph").then((mod) => mod.ForceGraph2D),
-  { ssr: false }
-);
-
-interface GraphData {
-  nodes: { id: string; text: string }[];
-  links: { source: string; target: string; label: string }[];
-}
+import { useRef, useState } from "react";
+import GraphPanel from "./GraphPanel";
+import Graph3D from "./Graph3D";
+import { GraphData } from "./types";
 
 export default function RelationsPage() {
-  const [arg1, setArg1] = useState("");
-  const [arg2, setArg2] = useState("");
-  const [graphData, setGraphData] = useState<GraphData | null>(null);
+  const [graphData, setGraphData] = useState<GraphData>({ nodes: [], links: [] });
   const [loading, setLoading] = useState(false);
   const [selectedNode, setSelectedNode] = useState<any>(null);
+  const graphRef = useRef<any>(null);
 
-  // ---- API appels ----
-  const handleTextSubmit = async () => {
+  const handleAddRelation = async (arg1: string, arg2: string) => {
+    if (!arg1 || !arg2) return;
     setLoading(true);
+
     try {
-      const res = await fetch("https://my-backend.onrender.com/predict-text", {
+      const res = await fetch("http://127.0.0.1:8000/predict-text", {
         method: "POST",
         body: new URLSearchParams({ arg1, arg2 }),
       });
       const data = await res.json();
 
-      setGraphData({
-        nodes: [
-          { id: arg1, text: arg1 },
-          { id: arg2, text: arg2 },
-        ],
-        links: [{ source: arg1, target: arg2, label: data.relation }],
+      setGraphData((prev) => {
+        const nodes = [...prev.nodes];
+        const links = [...prev.links];
+
+        if (!nodes.find((n) => n.id === arg1)) nodes.push({ id: arg1, text: arg1 });
+        if (!nodes.find((n) => n.id === arg2)) nodes.push({ id: arg2, text: arg2 });
+
+        links.push({
+          source: arg2,
+          target: arg1,
+          label: `${data.relation.predicted_label} (${(data.relation.probability * 100).toFixed(1)}%)`,
+        });
+
+        return { nodes, links };
       });
+
+      // zoom to fit
+      setTimeout(() => {
+        graphRef.current?.zoomToFit?.(400, 50);
+      }, 150);
     } catch (error) {
       console.error(error);
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
-  };
-
-  const handleCSVSubmit = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (!e.target.files || e.target.files.length === 0) return;
-    const file = e.target.files[0];
-    const formData = new FormData();
-    formData.append("file", file);
-
-    setLoading(true);
-    try {
-      const res = await fetch("https://my-backend.onrender.com/predict-csv", {
-        method: "POST",
-        body: formData,
-      });
-      const data = await res.json();
-
-      const nodes: { id: string; text: string }[] = [];
-      const links: { source: string; target: string; label: string }[] = [];
-
-      data.results.forEach((row: any) => {
-        if (!nodes.find((n) => n.id === row.parent))
-          nodes.push({ id: row.parent, text: row.parent });
-        if (!nodes.find((n) => n.id === row.child))
-          nodes.push({ id: row.child, text: row.child });
-        links.push({ source: row.parent, target: row.child, label: row.relation });
-      });
-
-      setGraphData({ nodes, links });
-    } catch (error) {
-      console.error(error);
-    }
-    setLoading(false);
   };
 
   return (
     <div className="flex h-screen">
-      {/* Panel gauche */}
-      <div className="w-1/4 bg-gray-100 p-4 overflow-y-auto border-r space-y-6">
-        <h2 className="text-xl font-bold">Contrôle</h2>
+      <GraphPanel
+        graphData={graphData}
+        setGraphData={setGraphData}
+        onAddRelation={handleAddRelation}
+        loading={loading}
+        selectedNode={selectedNode}
+        setSelectedNode={setSelectedNode}
+      />
 
-        {/* Input manuel */}
-        <div className="space-y-2">
-          <input
-            type="text"
-            placeholder="Argument 1"
-            value={arg1}
-            onChange={(e) => setArg1(e.target.value)}
-            className="border rounded p-2 w-full"
-          />
-          <input
-            type="text"
-            placeholder="Argument 2"
-            value={arg2}
-            onChange={(e) => setArg2(e.target.value)}
-            className="border rounded p-2 w-full"
-          />
-          <button
-            onClick={handleTextSubmit}
-            className="bg-blue-500 text-white px-4 py-2 rounded w-full"
-            disabled={loading}
-          >
-            {loading ? "Chargement..." : "Prédire relation"}
-          </button>
-        </div>
-
-        {/* Upload CSV */}
-        <div>
-          <h3 className="font-semibold mb-1">Charger un CSV</h3>
-          <input type="file" accept=".csv" onChange={handleCSVSubmit} />
-        </div>
-
-        {/* Infos sur le noeud sélectionné */}
-        {selectedNode && (
-          <div className="mt-6 p-3 border rounded bg-white shadow">
-            <h3 className="font-bold text-lg">Détails du nœud</h3>
-            <p><span className="font-semibold">ID :</span> {selectedNode.id}</p>
-            <p><span className="font-semibold">Texte :</span> {selectedNode.text}</p>
-          </div>
-        )}
-      </div>
-
-      {/* Zone du graphe */}
-      <div className="flex-1">
-        {graphData && (
-          <ForceGraph2D
-            graphData={graphData}
-            nodeLabel="id"
-            linkLabel="label"
-            nodeAutoColorBy="id"
-            linkDirectionalArrowLength={6}
-            linkDirectionalArrowRelPos={1}
-            linkCurvature={0.2}
-            onNodeClick={(node) => setSelectedNode(node)}
-          />
-        )}
+      <div className="flex-1 h-full">
+        <Graph3D
+          ref={graphRef}
+          graphData={graphData}
+          onNodeClick={(node) => setSelectedNode(node)}
+        />
       </div>
     </div>
   );

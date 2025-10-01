@@ -9,10 +9,12 @@
     "lint": "eslint"
   },
   "dependencies": {
+    "aframe": "^1.7.1",
     "next": "15.5.4",
     "react": "19.1.0",
     "react-dom": "19.1.0",
-    "react-force-graph": "^1.48.1"
+    "react-force-graph": "^1.48.1",
+    "three": "^0.180.0"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",
