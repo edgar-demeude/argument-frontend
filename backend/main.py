@@ -48,7 +48,7 @@ def main():
     aba_framework.make_aba_plus()
 
     # === Step 4: Print ABA+ results ===
-    # print_aba_plus_results(aba_framework)
+    print_aba_plus_results(aba_framework)
 
     # === Step 5: Plot ABA+ graph (nodes = assumption sets) ===
     aba_framework.plot_aba_plus_graph()
