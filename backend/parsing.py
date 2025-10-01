@@ -47,41 +47,40 @@ def _parse_rule_line(line: str) -> Dict[str, Dict[str, Set[str]]]:
 
 def _parse_pref_line(line: str) -> Dict[str, Set[str]]:
     """
-    Parse a preference line of the form PREF: a,b > c,d > e > g > f
+    Parse a preference line of the form:
+    - PREF: a,b > c,d > e
+    - PREF: a,b > c and a > d
     
-    Args:
-        line (str): Preference string starting with "PREF:".
+    Supports multiple chains joined by "and".
     
     Returns:
-        Dict[str, Set[str]]: Dictionary mapping each element to all elements 
-                             that come after it in the preference chain.
-    
-    Examples:
-        >>> _parse_pref_line("PREF: a,b > c,d > e > g > f")
-        {'a': {'c', 'd', 'e', 'g', 'f'}, 'b': {'c', 'd', 'e', 'g', 'f'}, 
-         'c': {'e', 'g', 'f'}, 'd': {'e', 'g', 'f'}, 'e': {'g', 'f'}, 'g': {'f'}}
+        Dict[str, Set[str]]: Dictionary mapping each element to all elements
+                             that come after it in the preference chain(s).
+                             Literals with no less-preferred values are omitted.
     """
     content = line.split(":", 1)[1].strip()
-    
-    # Split by '>' to get preference groups
-    groups = [group.strip() for group in content.split(">")]
-    
-    # Parse each group into a list of literals
-    parsed_groups = [_parse_list(group) for group in groups]
-    
-    # Build the preference dictionary
-    pref_dict = {}
-    
-    for i, current_group in enumerate(parsed_groups):
-        # Collect all literals that come after this group
-        less_preferred = set()
-        for j in range(i + 1, len(parsed_groups)):
-            less_preferred.update(parsed_groups[j])
-        
-        # Map each literal in current group to all less preferred literals
-        for literal in current_group:
-            pref_dict[literal] = less_preferred
-    
+
+    # Split into separate chains by 'and'
+    chains = [chain.strip() for chain in content.split("and") if chain.strip()]
+
+    pref_dict: Dict[str, Set[str]] = {}
+
+    for chain in chains:
+        groups = [group.strip() for group in chain.split(">")]
+        parsed_groups = [_parse_list(group) for group in groups]
+
+        for i, current_group in enumerate(parsed_groups):
+            less_preferred = set()
+            for j in range(i + 1, len(parsed_groups)):
+                less_preferred.update(parsed_groups[j])
+
+            # Only add mapping if there are less preferred items
+            if less_preferred:
+                for literal in current_group:
+                    if literal not in pref_dict:
+                        pref_dict[literal] = set()
+                    pref_dict[literal].update(less_preferred)
+
     return pref_dict
 
 def parse_doc(path: str) -> Tuple[
@@ -148,8 +147,7 @@ def parse_doc(path: str) -> Tuple[
     return language, assumptions, contraries, rules, preferences
 
 if __name__ == "__main__":
-    language, assumptions, contraries, rules, preferences = parse_doc(
-        "./backend/doc.txt")
+    language, assumptions, contraries, rules, preferences = parse_doc("./backend/data/simple_plus2AND.txt")
     print("Language:", language)
     print("Assumptions:", assumptions)
     print("Contraries:", contraries)
