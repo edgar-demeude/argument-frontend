@@ -167,7 +167,7 @@ class ABAFramework:
         Generate ABA+ attacks between assumption sets.
 
         - Normal: X -> Y if there exists ax from X attacking ay from Y
-                  without preference-based reversal.
+                without preference-based reversal.
         - Reverse: Y -> X if SOME y in Y is strictly preferred over SOME x in X.
         """
         self.normal_attacks.clear()
@@ -177,26 +177,47 @@ class ABAFramework:
 
         for X in self.assumption_combinations:
             for Y in self.assumption_combinations:
+                    
                 args_X = self.arguments_from_assumptions(X)
                 args_Y = self.arguments_from_assumptions(Y)
                 if not args_X or not args_Y:
                     continue
-                attack_found = False
+                
+                # Check for attacks from X to Y
                 for ax in args_X:
                     for ay in args_Y:
                         for contrary in self.contraries:
                             if ax.claim == contrary.contrary_attacker and contrary.contraried_literal in ay.leaves:
-                                attack_found = True
                                 reverse = any(self.is_preferred(y, x) for y in Y for x in X)
                                 if reverse:
                                     self.reverse_attacks.add((frozenset(Y), frozenset(X)))
                                 else:
                                     self.normal_attacks.add((frozenset(X), frozenset(Y)))
-                                break
-                        if attack_found:
-                            break
-                    if attack_found:
-                        break
+        
+        # Now add the subset attacks: if (ab) attacks c, then (abc) should also attack c
+        additional_normal = set()
+        additional_reverse = set()
+        
+        # For normal attacks: if X attacks Y, then any superset of X should attack Y
+        for X_att, Y_att in self.normal_attacks:
+            X = set(X_att)
+            Y = set(Y_att)
+            for Z in self.assumption_combinations:
+                if X.issubset(Z) and Z != X:
+                    additional_normal.add((frozenset(Z), Y_att))
+        
+        # For reverse attacks: if Y attacks X, then any superset of Y should attack X
+        for Y_att, X_att in self.reverse_attacks:
+            Y = set(Y_att)
+            X = set(X_att)
+            for Z in self.assumption_combinations:
+                if Y.issubset(Z) and Z != Y:
+                    additional_reverse.add((frozenset(Z), X_att))
+        
+        # Add the additional attacks
+        self.normal_attacks.update(additional_normal)
+        self.reverse_attacks.update(additional_reverse)
+
 
     def make_aba_plus(self) -> None:
         """Generate ABA+ framework: assumption combinations and ABA+ attacks."""

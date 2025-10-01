@@ -24,10 +24,12 @@ def main():
     print("=" * 50)
 
     # Build framework from the given input specification file
-    aba_framework = build_aba_framework("./backend/data/simple_plus2.txt")
+    aba_framework = build_aba_framework("./backend/data/example.txt")
 
     # Print the original (non-atomic) ABA framework
     print(f"\n ------- Original ABA framework -------\n{aba_framework}")
+
+    
 
     # === Step 2: Prepare the framework for ABA+ ===
     # This includes:
@@ -46,6 +48,7 @@ def main():
     #  - normal attacks (between assumption sets)
     #  - reverse attacks (between assumption sets)
     aba_framework.make_aba_plus()
+    
 
     # === Step 4: Print ABA+ results ===
     print_aba_plus_results(aba_framework)
