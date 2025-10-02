@@ -1,6 +1,6 @@
 "use client";
 import { useRef, useState } from "react";
-import GraphPanel from "./relationsPannelProps";
+import RelationsPannelProps from "./relationsPannelProps";
 import Graph3D, { Graph3DRef } from "../components/graph3D";
 import { GraphData, GraphNode } from "../components/types";
 import { API_URL } from "../../../config";
@@ -47,13 +47,13 @@ export default function RelationsPage() {
 
   return (
     <div className="flex h-screen">
-      <GraphPanel
+      <RelationsPannelProps
         setGraphData={setGraphData}
         onAddRelation={handleAddRelation}
         loading={loading}
         selectedNode={selectedNode}
       />
-      <div className="flex-1 h-full">
+      <div className="flex-1 h-full min-w-0 overflow-hidden relative">
         <Graph3D
           ref={graphRef}
           graphData={graphData}

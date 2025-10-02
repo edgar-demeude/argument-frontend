@@ -53,6 +53,8 @@ const Graph3D = forwardRef<Graph3DRef, Graph3DProps>(
     return (
       <ForceGraph3D
         ref={fgRef}
+        width={undefined}
+        height={undefined}
         graphData={graphData}
         backgroundColor="#1e293b"
         nodeLabel="id"

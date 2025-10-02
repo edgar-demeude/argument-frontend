@@ -10,7 +10,7 @@ interface GraphPanelProps {
   selectedNode: GraphNode | null;
 }
 
-export default function relationsPannelProps({
+export default function RelationsPannelProps({
   setGraphData,
   onAddRelation,
   loading,

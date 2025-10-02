@@ -24,3 +24,7 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+.flex-1.h-full {
+  min-width: 0;
+}
