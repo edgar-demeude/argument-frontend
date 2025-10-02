@@ -46,7 +46,7 @@ export default function ABAPage() {
         loading={loading}
         selectedNode={selectedNode}
       />
-      <div className="flex-1 h-full">
+      <div className="flex-1 h-full min-w-0 overflow-hidden relative">
         <Graph3D
           ref={graphRef}
           graphData={graphData}
