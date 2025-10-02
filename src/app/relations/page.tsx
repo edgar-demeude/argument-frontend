@@ -1,13 +1,9 @@
 "use client";
 import { useRef, useState } from "react";
-import GraphPanel from "./GraphPanel";
-import Graph3D, { Graph3DRef } from "./Graph3D";
-import { GraphData, GraphNode } from "./types";
-
-// Définir l'URL de l'API en fonction de l'environnement
-const API_URL =
-  process.env.NEXT_PUBLIC_API_URL || "https://edgar-demeude-argument-backend.hf.space";
-  // Local : http://127.0.0.1:8000/
+import GraphPanel from "./relationsPannelProps";
+import Graph3D, { Graph3DRef } from "../components/graph3D";
+import { GraphData, GraphNode } from "../components/types";
+import { API_URL } from "../../../config";
 
 export default function RelationsPage() {
   const [graphData, setGraphData] = useState<GraphData>({ nodes: [], links: [] });

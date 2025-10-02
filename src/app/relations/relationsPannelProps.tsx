@@ -1,6 +1,6 @@
 "use client";
 import { useState } from "react";
-import { GraphData, GraphNode } from "./types";
+import { GraphData, GraphNode } from "../components/types";
 import { sampleCSV1, sampleCSV2, parseCSVString } from "./sampleCSV";
 
 interface GraphPanelProps {
@@ -10,7 +10,7 @@ interface GraphPanelProps {
   selectedNode: GraphNode | null;
 }
 
-export default function GraphPanel({
+export default function relationsPannelProps({
   setGraphData,
   onAddRelation,
   loading,
