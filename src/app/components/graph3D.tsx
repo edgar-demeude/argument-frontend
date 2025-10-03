@@ -18,20 +18,12 @@ interface Graph3DProps {
   onNodeClick: (node: GraphNode) => void;
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-interface ForceGraphRef {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  zoomToFit?: (duration: number, padding: number) => void;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  [key: string]: any;
-}
-
 const Graph3D = forwardRef<Graph3DRef, Graph3DProps>(
   ({ graphData, onNodeClick }, ref) => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const fgRef = useRef<any>(null);
 
-    // Charger aframe uniquement côté client
+    // Load aframe on client side only
     useEffect(() => {
       import("aframe");
     }, []);
