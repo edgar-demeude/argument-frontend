@@ -45,7 +45,7 @@ export default function ABAPage() {
 
       // Links from attacks
       const links: GraphLink[] = (data.attacks ?? []).map((att) => {
-        // ex: "[A7] → [A5]"
+        // ex: "[A7] -> [A5]"
         const parts = att.split("→").map((p) => p.trim());
         const source = cleanLabel(parts[0]);
         const target = cleanLabel(parts[1]);
@@ -54,7 +54,6 @@ export default function ABAPage() {
 
       // Optional: reverse attacks with dashed style or different color
       const reverseLinks: GraphLink[] = (data.reverse_attacks ?? []).map((r, i) => {
-        // Example: connect nodes by indices (or parse if you want real mapping)
         const source = nodes[i % nodes.length]?.id ?? `node-${i}`;
         const target = nodes[(i + 1) % nodes.length]?.id ?? `node-${i + 1}`;
         return { source, target, label: "reverse", dashed: true };
