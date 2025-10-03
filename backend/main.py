@@ -14,6 +14,45 @@ from aba_builder import build_aba_framework, prepare_aba_plus_framework
 from aba_utils import print_aba_plus_results
 
 
+def testABAPlus(aba_framework) :
+    
+    # === Step 2: Prepare the framework for ABA+ ===
+
+    aba_framework = prepare_aba_plus_framework(aba_framework)
+
+    # === Step 3: Generate ABA+ components ===
+    print("\n" + "=" * 50)
+    print("Generating ABA+ Components")
+    print("=" * 50)
+    aba_framework.make_aba_plus()
+    
+
+    # === Step 4: Print ABA+ results ===
+    print_aba_plus_results(aba_framework)
+
+    # === Step 5: Plot ABA+ graph (nodes = assumption sets) ===
+    aba_framework.plot_aba_plus_graph()
+
+
+def testABA(aba_framework) :
+    
+    aba_framework.transform_aba()
+    print(aba_framework)
+
+    # Generate arguments
+    aba_framework.generate_arguments()
+    gen_args = aba_framework.arguments
+    print("\n ------- Generated arguments -------\n ")
+    print(gen_args)
+
+    # Generate attacks
+    aba_framework.generate_attacks()
+    attacks = aba_framework.attacks
+    print("\n ------- Generated attacks -------\n ")
+    print(attacks, "\n")
+
+    aba_framework.plot_aba_graph()
+
 def main():
     """
     Main function to generate and analyze an ABA+ framework.
@@ -24,37 +63,14 @@ def main():
     print("=" * 50)
 
     # Build framework from the given input specification file
-    aba_framework = build_aba_framework("./backend/data/example.txt")
-
-    # Print the original (non-atomic) ABA framework
+    aba_framework = build_aba_framework("./backend/data/td4_1.txt")
     print(f"\n ------- Original ABA framework -------\n{aba_framework}")
 
+    testABA(aba_framework)
+    testABAPlus(aba_framework)
+
     
 
-    # === Step 2: Prepare the framework for ABA+ ===
-    # This includes:
-    #  - saving the base assumptions (before atomicity transformation)
-    #  - transforming the framework to its atomic version
-    #  - generating arguments and standard attacks
-    aba_framework = prepare_aba_plus_framework(aba_framework)
-
-    # === Step 3: Generate ABA+ components ===
-    print("\n" + "=" * 50)
-    print("Generating ABA+ Components")
-    print("=" * 50)
-
-    # Generate:
-    #  - all combinations of base assumptions
-    #  - normal attacks (between assumption sets)
-    #  - reverse attacks (between assumption sets)
-    aba_framework.make_aba_plus()
-    
-
-    # === Step 4: Print ABA+ results ===
-    print_aba_plus_results(aba_framework)
-
-    # === Step 5: Plot ABA+ graph (nodes = assumption sets) ===
-    aba_framework.plot_aba_plus_graph()
 
 
 if __name__ == "__main__":
