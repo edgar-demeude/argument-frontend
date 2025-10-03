@@ -1,38 +1,75 @@
 "use client";
 import { useRef, useState } from "react";
 import ABAPanel from "./abaPannelProps";
-import { GraphData, GraphNode } from "../components/types";
+import ABAResultsPanel from "./abaResultsPanel";
+import { GraphData, GraphLink, GraphNode, ABAApiResponse } from "../components/types";
 import Graph3D, { Graph3DRef } from "../components/graph3D";
 import { API_URL } from "../../../config";
-import { ABAApiResponse } from '../components/types'
 
 export default function ABAPage() {
   const [graphData, setGraphData] = useState<GraphData>({ nodes: [], links: [] });
+  const [abaResults, setAbaResults] = useState<ABAApiResponse | null>(null);
   const [loading, setLoading] = useState(false);
   const [selectedNode, setSelectedNode] = useState<GraphNode | null>(null);
   const graphRef = useRef<Graph3DRef>(null);
 
-  // Handler to generate an ABA framework from textarea text
-  const handleGenerateABA = async (inputText: string) => {
-    if (!inputText) return;
+  const handleGenerateABA = async (file: File) => {
+    if (!file) return;
     setLoading(true);
+
     try {
-      const res = await fetch(`${API_URL}/generate-aba`, {
+      const formData = new FormData();
+      formData.append("file", file);
+
+      const res = await fetch(`${API_URL}/aba-upload`, {
         method: "POST",
-        body: new URLSearchParams({ text: inputText }),
+        body: formData,
       });
-      const data: ABAApiResponse = await res.json(); // typage explicite
 
-      const nodes: GraphNode[] = data.nodes.map((n) => ({ id: n.id, text: n.text }));
-      const links = data.attacks.map((a) => ({ source: a.from, target: a.to, label: "attacks" }));
+      const data: ABAApiResponse = await res.json();
+      setAbaResults(data);
 
-      setGraphData({ nodes, links });
+      // Transform results into nodes/links for 3D graph
+      const cleanLabel = (arg: string) => {
+        if (arg.startsWith("[") && arg.indexOf("]") > 0) {
+          return arg.slice(1, arg.indexOf("]"));
+        }
+        return arg;
+      };
+
+      // Nodes
+      const nodes: GraphNode[] = (data.arguments ?? []).map((arg) => {
+        const id = cleanLabel(arg);
+        return { id, text: arg };
+      });
+
+      // Links from attacks
+      const links: GraphLink[] = (data.attacks ?? []).map((att) => {
+        // ex: "[A7] → [A5]"
+        const parts = att.split("→").map((p) => p.trim());
+        const source = cleanLabel(parts[0]);
+        const target = cleanLabel(parts[1]);
+        return { source, target, label: "attack" };
+      });
+
+      // Optional: reverse attacks with dashed style or different color
+      const reverseLinks: GraphLink[] = (data.reverse_attacks ?? []).map((r, i) => {
+        // Example: connect nodes by indices (or parse if you want real mapping)
+        const source = nodes[i % nodes.length]?.id ?? `node-${i}`;
+        const target = nodes[(i + 1) % nodes.length]?.id ?? `node-${i + 1}`;
+        return { source, target, label: "reverse", dashed: true };
+      });
+
+      // Merge all links
+      setGraphData({ nodes, links: [...links, ...reverseLinks] });
 
       setTimeout(() => {
         graphRef.current?.zoomToFit?.(400, 50);
       }, 150);
     } catch (error) {
-      console.error("Erreur lors de la génération ABA :", error);
+      console.error("Error generating ABA:", error);
+      setAbaResults(null);
+      setGraphData({ nodes: [], links: [] });
     } finally {
       setLoading(false);
     }
@@ -40,19 +77,20 @@ export default function ABAPage() {
 
   return (
     <div className="flex h-screen">
-      <ABAPanel
-        setGraphData={setGraphData}
-        onGenerateABA={handleGenerateABA}
-        loading={loading}
-        selectedNode={selectedNode}
-      />
-      <div className="flex-1 h-full min-w-0 overflow-hidden relative">
+      {/* Left panel: ABA file upload */}
+      <ABAPanel onGenerateABA={handleGenerateABA} loading={loading} />
+
+      {/* Center: 3D graph */}
+      <div className="flex-1 h-full overflow-hidden relative">
         <Graph3D
           ref={graphRef}
           graphData={graphData}
           onNodeClick={(node) => setSelectedNode(node)}
         />
       </div>
+
+      {/* Right panel: ABA+ results */}
+      <ABAResultsPanel results={abaResults} />
     </div>
   );
 }

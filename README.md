@@ -1,7 +1,7 @@
 # Argument Visualisation
 
 A web application built with **Next.js 14**, **React**, and **Tailwind CSS** for visualising argumentative structures.  
-The project enables users to explore argument relations, predict support/attack links, and visualise debates interactively in 3D.
+Users can visualise argument relations interactively in 3D, predict support/attack links, and generate ABA+ frameworks interactively.
 
 ---
 
@@ -13,9 +13,10 @@ The project enables users to explore argument relations, predict support/attack 
 ## 📌 Key Features
 
 ### 1. Argument Graph Visualisation
-- Display arguments as **nodes** and relations as **links** in a **3D interactive graph**.  
+- Display arguments as **nodes** and relations as **links** in a **fully interactive 3D graph**.  
 - **Support** and **Attack** relations shown with distinct colors.  
-- Root claims are highlighted with a **unique, vivid color** for easy identification.  
+- Root claims are highlighted with a **unique, vivid color** for easy identification. 
+- Auto-zoom and dynamic resizing to fit the graph to screen. 
 
 ### 2. Relation Prediction with AI
 - Add a new relation between two textual arguments.  
@@ -23,14 +24,18 @@ The project enables users to explore argument relations, predict support/attack 
 - Automatically update the graph with the predicted relation.  
 - The AI model is trained on a curated dataset of debates scraped from **Kialo** to capture realistic argumentative structures.
 
-### 3. Sample Debates
-- Load predefined **sample CSVs** representing debates around a root claim.  
-- Explore debates with interconnected support and attack chains.  
+### ABA+ Framework Generator
 
-### 4. ABA Generator
-- Define literals, assumptions, and rules.  
-- Generate arguments and attacks automatically.  
-- Handle preferences between assumptions.  
+- Upload a text file or use predefined examples to build ABA+ frameworks.
+- Automatically generates **assumptions**, **arguments**, **attacks**, and **reverse attacks**.
+- Supports preferences between assumptions.
+- Graph visualization reflects the ABA+ structure in real time.
+
+### 4. Sample Debates & Examples
+- Preloaded **CSV examples** demonstrate typical debate structures.
+- Users can explore **interconnected support** and **attack chains**.
+- Quick **preview of ABA+** output directly in the interface.
+- Future plans to allow users to upload **their own CSV files** for custom debates.
 
 ---
 
@@ -49,21 +54,21 @@ The project enables users to explore argument relations, predict support/attack 
 ---
 
 ## 🛠️ Tech Stack
-- [Next.js 14](https://nextjs.org/)  
-- [React](https://react.dev/)  
-- [Tailwind CSS](https://tailwindcss.com/)  
-- [react-force-graph](https://github.com/vasturiano/react-force-graph) for 3D graph visualisation  
-- Deployed with [Vercel](https://vercel.com/)  
+- **Frontend:** Next.js 14, React, Tailwind CSS
+- **3D Visualization:** react-force-graph
+- **Backend:** FastAPI, PyTorch ML models
+- **ABA Framework:** Custom ABA+ generator for assumptions and attacks
+- **Deployment:** Vercel (frontend), Hugging Face or local backend
 
 ---
 
 ## 🔧 Getting Started
 
-You have two options: run everything locally or use the deployed version.
+You can either run everything locally or use the deployed app.
 
 ### 1️⃣ Run Locally
 
-#### Frontend (Next.js)
+### Frontend (Next.js)
 
 Clone the frontend repository and install dependencies:
 
@@ -76,7 +81,7 @@ npm run dev
 
 Open http://localhost:3000 in your browser.
 
-#### Backend (AI Relation Prediction)
+### Backend
 
 Clone the backend repository and run it with Uvicorn:
 
@@ -88,16 +93,14 @@ conda activate argument-backend
 uvicorn app:app --reload --host 0.0.0.0 --port 8000
 ```
 
-The frontend will use this backend to predict argumentative relations between claims.
+The frontend will connect to the backend to predict relations and generate ABA+ graphs.
 
 ### 2️⃣ Use the Deployed Version
 
 Everything is already deployed and running here:
 👉 https://arguments-visualisation.vercel.app
 
-## 📖 Usage
-
-Paste an ABA specification into the textarea on the homepage, for example:
+## 📖 Example ABA+ Input
 
 ```bash
 L: [a,b,c,q,p,r,s,t]
@@ -113,9 +116,11 @@ C(c): t
 PREF: a > b
 ```
 
-Click Parse to process the input (parsing logic coming soon).
+- Upload or select an example file to generate arguments, attacks, and reverse attacks.
+- Results are displayed in both textual ABA+ form and 3D graph.
 
 ## 📌 Status
 
-- ✅ Basic skeleton ready
-- 🚧 Parsing & reasoning engine to be implemented
+- ✅ Interactive 3D argument visualization
+- ✅ AI relation prediction (support/attack)
+- ✅ ABA+ generator with assumptions, arguments, and attacks

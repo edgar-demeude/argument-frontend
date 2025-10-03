@@ -1,111 +1,118 @@
 "use client";
-import { useState } from "react";
-import { GraphData, GraphNode } from "../components/types";
+import { useEffect, useRef, useState } from "react";
+import { API_URL } from "../../../config";
 
 interface ABAPanelProps {
-  setGraphData: React.Dispatch<React.SetStateAction<GraphData>>;
-  onGenerateABA: (inputText: string) => void;
+  onGenerateABA: (file: File) => void;
   loading: boolean;
-  selectedNode: GraphNode | null;
 }
 
-export default function ABAPanel({
-  setGraphData,
-  onGenerateABA,
-  loading,
-  selectedNode,
-}: ABAPanelProps) {
-  const [inputText, setInputText] = useState<string>(
-    `L: [a,b,c,q,p,r,s,t]
-A: [a,b,c]
-C(a): r
-C(b): s
-C(c): t
-[r1]: p <- q,a
-[r2]: q <- 
-[r3]: r <- b,c
-[r4]: t <- p,c
-[r5]: s <- t
-PREF: a > b`
-  );
-  const [selectedSample, setSelectedSample] = useState<"sample1" | "sample2">("sample1");
+interface ExampleFile {
+  name: string;
+  path: string;
+}
 
-  const handleLoadSample = () => {
-    if (selectedSample === "sample1") {
-      setInputText(
-        `L: [a,b,c,q,p,r,s,t]
-A: [a,b,c]
-C(a): r
-C(b): s
-C(c): t
-[r1]: p <- q,a
-[r2]: q <- 
-[r3]: r <- b,c
-[r4]: t <- p,c
-[r5]: s <- t
-PREF: a > b`
-      );
-    } else {
-      setInputText(
-        `L: [x,y,z]
-A: [x,y]
-C(x): z
-[r1]: x <- y
-[r2]: y <- 
-PREF: x > y`
-      );
+export default function ABAPanel({ onGenerateABA, loading }: ABAPanelProps) {
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [fileContent, setFileContent] = useState<string>("");
+  const [exampleFiles, setExampleFiles] = useState<ExampleFile[]>([]);
+
+  // Load example files from API on mount
+  useEffect(() => {
+    const fetchExamples = async () => {
+      try {
+        const res = await fetch(`${API_URL}/aba-examples`);
+        const data = await res.json();
+        // Map filenames to ExampleFile objects
+        const files = data.examples.map((filename: string) => ({
+          name: filename,
+          path: filename,
+        }));
+        setExampleFiles(files);
+      } catch (err) {
+        console.error("Failed to fetch example files:", err);
+      }
+    };
+    fetchExamples();
+  }, []);
+
+  // Handle custom file upload
+  const handleFileChange = () => {
+    const file = fileInputRef.current?.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (e) => setFileContent(e.target?.result as string);
+    reader.readAsText(file);
+
+    onGenerateABA(file);
+  };
+
+  // Handle selecting an example file
+  const handleExampleSelect = async (event: React.ChangeEvent<HTMLSelectElement>) => {
+    const selected = exampleFiles.find((ex) => ex.name === event.target.value);
+    if (!selected) return;
+
+    try {
+      const res = await fetch(`${API_URL}/aba-examples/${selected.path}`);
+      const text = await res.text();
+
+      // Create temporary File object to pass to ABA generator
+      const tempFile = new File([text], selected.name, { type: "text/plain" });
+      setFileContent(text);
+      onGenerateABA(tempFile);
+    } catch (err) {
+      console.error("Failed to load example file:", err);
     }
   };
 
   return (
-    <div className="w-1/4 bg-gray-800 p-4 overflow-y-auto text-white flex-shrink-0">
-      <h2 className="text-xl font-bold mb-4">ABA Framework Generator</h2>
+    <div className="w-1/6 bg-gray-800 p-4 overflow-y-auto text-white flex-shrink-0 flex flex-col">
+      <h2 className="text-xl font-bold mb-4">Upload ABA File</h2>
 
-      <textarea
-        value={inputText}
-        onChange={(e) => setInputText(e.target.value)}
-        rows={15}
-        className="border rounded p-2 w-full bg-gray-700 text-white placeholder-gray-300 resize-none"
-        placeholder="Enter your ABA framework here..."
-      />
+      {/* Styled file input */}
+      <label className="bg-blue-500 text-white px-4 py-2 rounded cursor-pointer mb-2 text-center w-full hover:bg-blue-600 transition">
+        {loading ? "Loading..." : "Upload .txt File"}
+        <input
+          type="file"
+          ref={fileInputRef}
+          accept=".txt"
+          onChange={handleFileChange}
+          className="hidden"
+        />
+      </label>
 
-      <button
-        onClick={() => onGenerateABA(inputText)}
-        className="bg-blue-500 text-white px-4 py-2 rounded w-full mt-2"
-        disabled={loading}
+      {/* Dropdown for example files */}
+      <select
+        className="bg-gray-700 border rounded p-2 mb-4 text-white w-full hover:bg-gray-600 transition"
+        onChange={handleExampleSelect}
+        defaultValue=""
       >
-        {loading ? "Generating..." : "Generate ABA Framework"}
-      </button>
+        <option value="" disabled>
+          Load Example File
+        </option>
+        {exampleFiles.map((ex) => (
+          <option key={ex.path} value={ex.name}>
+            {ex.name}
+          </option>
+        ))}
+      </select>
 
-      <div className="mt-4 space-y-2">
-        <label className="block text-white font-semibold">Load Sample ABA Framework:</label>
-        <select
-          value={selectedSample}
-          onChange={(e) => setSelectedSample(e.target.value as "sample1" | "sample2")}
-          className="w-full p-2 rounded bg-gray-700 text-white"
-        >
-          <option value="sample1">Sample ABA 1</option>
-          <option value="sample2">Sample ABA 2</option>
-        </select>
-        <button
-          onClick={handleLoadSample}
-          className="bg-green-600 text-white px-4 py-2 rounded w-full mt-2"
-        >
-          Load Selected Sample
-        </button>
-      </div>
-
-      {selectedNode && (
-        <div className="mt-6 p-3 border rounded bg-gray-700 text-white shadow">
-          <h3 className="font-bold text-lg">Assumption Details</h3>
-          <p>
-            <span className="font-semibold">ID:</span> {selectedNode.id}
-          </p>
-          <p>
-            <span className="font-semibold">Text:</span> {selectedNode.text}
-          </p>
+      {/* Preview loaded file */}
+      {fileContent && (
+        <div className="bg-gray-900 p-2 rounded text-sm text-gray-200 overflow-auto max-h-48 mb-2">
+          <pre>{fileContent}</pre>
         </div>
       )}
+
+      {/* Generate button */}
+      <button
+        onClick={handleFileChange}
+        className="bg-green-500 text-white px-4 py-2 rounded w-full hover:bg-green-600 transition"
+        disabled={loading}
+      >
+        {loading ? "Generating ABA..." : "Generate ABA+"}
+      </button>
     </div>
   );
 }
