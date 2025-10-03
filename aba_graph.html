@@ -33,7 +33,7 @@
 
              #mynetwork {
                  width: 100%;
-                 height: 750px;
+                 height: 600px;
                  background-color: #ffffff;
                  border: 1px solid lightgray;
                  position: relative;
@@ -88,8 +88,8 @@
                   
 
                   // parsing and collecting nodes and edges from the python
-                  nodes = new vis.DataSet([{"color": "#97c2fc", "id": "frozenset()", "label": "{}", "shape": "dot"}, {"color": "#97c2fc", "id": "frozenset({b})", "label": "{b}", "shape": "dot"}, {"color": "#97c2fc", "id": "frozenset({a})", "label": "{a}", "shape": "dot"}, {"color": "#97c2fc", "id": "frozenset({b, a})", "label": "{a,b}", "shape": "dot"}]);
-                  edges = new vis.DataSet([{"arrows": "to", "color": "black", "dashes": false, "from": "frozenset({b, a})", "title": "Normal Attack", "to": "frozenset({a})", "width": 2}, {"arrows": "to", "color": "black", "dashes": false, "from": "frozenset({b, a})", "title": "Normal Attack", "to": "frozenset({b})", "width": 2}, {"arrows": "to", "color": "black", "dashes": false, "from": "frozenset({b})", "title": "Normal Attack", "to": "frozenset({a})", "width": 2}, {"arrows": "to", "color": "black", "dashes": false, "from": "frozenset({b, a})", "title": "Normal Attack", "to": "frozenset({b, a})", "width": 2}, {"arrows": "to", "color": "black", "dashes": false, "from": "frozenset({a})", "title": "Normal Attack", "to": "frozenset({b})", "width": 2}, {"arrows": "to", "color": "black", "dashes": false, "from": "frozenset({a})", "title": "Normal Attack", "to": "frozenset({b, a})", "width": 2}, {"arrows": "to", "color": "black", "dashes": false, "from": "frozenset({b})", "title": "Normal Attack", "to": "frozenset({b, a})", "width": 2}]);
+                  nodes = new vis.DataSet([{"color": "#97c2fc", "id": "A4", "label": "A4", "shape": "dot"}, {"color": "#97c2fc", "id": "A3", "label": "A3", "shape": "dot"}, {"color": "#97c2fc", "id": "A2", "label": "A2", "shape": "dot"}, {"color": "#97c2fc", "id": "A1", "label": "A1", "shape": "dot"}]);
+                  edges = new vis.DataSet([{"arrows": "to", "from": "A3", "to": "A4"}, {"arrows": "to", "from": "A3", "to": "A2"}, {"arrows": "to", "from": "A4", "to": "A1"}, {"arrows": "to", "from": "A4", "to": "A3"}]);
 
                   nodeColors = {};
                   allNodes = nodes.get({ returnType: "Object" });
@@ -100,7 +100,35 @@
                   // adding nodes and edges to the graph
                   data = {nodes: nodes, edges: edges};
 
-                  var options = {"physics": {"enabled": true, "stabilization": {"enabled": true, "iterations": 200}}};
+                  var options = {
+    "configure": {
+        "enabled": false
+    },
+    "edges": {
+        "color": {
+            "inherit": true
+        },
+        "smooth": {
+            "enabled": true,
+            "type": "dynamic"
+        }
+    },
+    "interaction": {
+        "dragNodes": true,
+        "hideEdgesOnDrag": false,
+        "hideNodesOnDrag": false
+    },
+    "physics": {
+        "enabled": true,
+        "stabilization": {
+            "enabled": true,
+            "fit": true,
+            "iterations": 1000,
+            "onlyDynamicEdges": false,
+            "updateInterval": 50
+        }
+    }
+};
 
                   
 

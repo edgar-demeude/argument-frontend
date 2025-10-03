@@ -5,4 +5,4 @@ A: [a,b]
 [r2]: s <- b
 C(a): s
 C(b): l
-PREF: a > b
+PREF: a < b
