@@ -1,9 +1,10 @@
 "use client";
 import { useRef, useState } from "react";
 import RelationsPannelProps from "./relationsPannelProps";
-import Graph3D, { Graph3DRef } from "../components/graph3D";
+import Graph3D, { Graph3DRef } from "../components/graph3DBase";
 import { GraphData, GraphNode } from "../components/types";
 import { API_URL } from "../../../config";
+import RelationsGraph3D from "./RelationsGraph3D";
 
 export default function RelationsPage() {
   const [graphData, setGraphData] = useState<GraphData>({ nodes: [], links: [] });
@@ -55,7 +56,7 @@ export default function RelationsPage() {
         selectedNode={selectedNode}
       />
       <div className="flex-1 h-full min-w-0 overflow-hidden relative">
-        <Graph3D
+        <RelationsGraph3D
           ref={graphRef}
           graphData={graphData}
           onNodeClick={(node) => setSelectedNode(node)}

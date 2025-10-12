@@ -3,8 +3,9 @@ import { useRef, useState } from "react";
 import ABAPanel from "./abaPannelProps";
 import ABAResultsPanel from "./abaResultsPanel";
 import { GraphData, GraphLink, GraphNode, ABAApiResponse } from "../components/types";
-import Graph3D, { Graph3DRef } from "../components/graph3D";
+import { Graph3DRef } from "../components/graph3DBase";
 import { API_URL } from "../../../config";
+import ABAGraph3D from "./ABAGraph3D";
 
 export default function ABAPage() {
   const [graphData, setGraphData] = useState<GraphData>({ nodes: [], links: [] });
@@ -81,7 +82,7 @@ export default function ABAPage() {
 
       {/* Center: 3D graph */}
       <div className="flex-1 h-full overflow-hidden relative">
-        <Graph3D
+        <ABAGraph3D
           ref={graphRef}
           graphData={graphData}
           onNodeClick={(node) => setSelectedNode(node)}
