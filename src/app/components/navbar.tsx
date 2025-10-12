@@ -18,7 +18,7 @@ export default function Navbar() {
         </Link>
       </div>
       <Link href="/relations" className={linkClass("/relations")}>
-        Relations Prediction
+        Relation Prediction
       </Link>
       <Link href="/aba" className={linkClass("/aba")}>
         ABA Generator

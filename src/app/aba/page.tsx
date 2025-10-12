@@ -1,5 +1,5 @@
 "use client";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import ABAPanel from "./abaPannelProps";
 import ABAResultsPanel from "./abaResultsPanel";
 import { GraphData, GraphLink, GraphNode, ABAApiResponse } from "../components/types";
@@ -13,6 +13,16 @@ export default function ABAPage() {
   const [loading, setLoading] = useState(false);
   const [selectedNode, setSelectedNode] = useState<GraphNode | null>(null);
   const graphRef = useRef<Graph3DRef>(null);
+
+  useEffect(() => {
+      // Force resizing of 3D canvas after initial rendering
+      const timer = setTimeout(() => {
+        window.dispatchEvent(new Event("resize"));
+        graphRef.current?.zoomToFit?.(400, 50);
+      }, 200);
+  
+      return () => clearTimeout(timer);
+    }, []);
 
   const handleGenerateABA = async (file: File) => {
     if (!file) return;

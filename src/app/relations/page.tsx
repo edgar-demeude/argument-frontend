@@ -1,7 +1,7 @@
 "use client";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import RelationsPannelProps from "./relationsPannelProps";
-import Graph3D, { Graph3DRef } from "../components/graph3DBase";
+import { Graph3DRef } from "../components/graph3DBase";
 import { GraphData, GraphNode } from "../components/types";
 import { API_URL } from "../../../config";
 import RelationsGraph3D from "./RelationsGraph3D";
@@ -11,6 +11,16 @@ export default function RelationsPage() {
   const [loading, setLoading] = useState(false);
   const [selectedNode, setSelectedNode] = useState<GraphNode | null>(null);
   const graphRef = useRef<Graph3DRef>(null);
+
+  useEffect(() => {
+    // Force resizing of 3D canvas after initial rendering
+    const timer = setTimeout(() => {
+      window.dispatchEvent(new Event("resize"));
+      graphRef.current?.zoomToFit?.(400, 50);
+    }, 200);
+
+    return () => clearTimeout(timer);
+  }, []);
 
   const handleAddRelation = async (arg1: string, arg2: string) => {
     if (!arg1 || !arg2) return;

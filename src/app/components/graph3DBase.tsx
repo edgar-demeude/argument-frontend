@@ -90,7 +90,7 @@ const Graph3DBase = forwardRef<Graph3DRef, BaseGraph3DProps>(
             onNodeClick={(node) => onNodeClick(node as GraphNode)}
             d3AlphaDecay={0.02}
             d3VelocityDecay={0.4}
-            nodeRelSize={8}
+            nodeRelSize={6}
         />
       </div>
     );
