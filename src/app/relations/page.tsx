@@ -51,6 +51,7 @@ export default function RelationsPage() {
         setGraphData={setGraphData}
         onAddRelation={handleAddRelation}
         loading={loading}
+        setLoading={setLoading}
         selectedNode={selectedNode}
       />
       <div className="flex-1 h-full min-w-0 overflow-hidden relative">

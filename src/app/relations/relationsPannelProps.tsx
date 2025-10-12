@@ -1,13 +1,15 @@
 "use client";
 import { useState } from "react";
 import { GraphData, GraphNode } from "../components/types";
-import { sampleCSV1, sampleCSV2, parseCSVString } from "./sampleCSV";
+import { sampleCSV1, sampleCSV2 } from "./sampleCSV";
+import { API_URL } from "../../../config";
 
 interface GraphPanelProps {
   setGraphData: React.Dispatch<React.SetStateAction<GraphData>>;
   onAddRelation: (arg1: string, arg2: string) => void;
   loading: boolean;
   selectedNode: GraphNode | null;
+  setLoading: (val: boolean) => void;
 }
 
 export default function RelationsPannelProps({
@@ -15,29 +17,44 @@ export default function RelationsPannelProps({
   onAddRelation,
   loading,
   selectedNode,
+  setLoading,
 }: GraphPanelProps) {
   const [arg1, setArg1] = useState("");
   const [arg2, setArg2] = useState("");
   const [selectedSample, setSelectedSample] = useState<"sample1" | "sample2">("sample1");
 
-  const handleLoadSampleCSV = () => {
+  const handleLoadSampleCSV = async () => {
     const csvString = selectedSample === "sample1" ? sampleCSV1 : sampleCSV2;
-    const rows = parseCSVString(csvString);
-    if (!rows.length) return;
+    const blob = new Blob([csvString], { type: "text/csv" });
+    const formData = new FormData();
+    formData.append("file", blob, "sample.csv");
 
-    setGraphData({ nodes: [], links: [] }); // reset graph before loading
-    setGraphData((prev) => {
-      const nodes = [...prev.nodes];
-      const links = [...prev.links];
+    setLoading(true);
 
-      rows.forEach((r) => {
+    try {
+      const res = await fetch(`${API_URL}/predict-csv`, {
+        method: "POST",
+        body: formData,
+      });
+      const data = await res.json();
+
+      const nodes: GraphNode[] = [];
+      const links = data.results.map((r: any) => {
         if (!nodes.find((n) => n.id === r.parent)) nodes.push({ id: r.parent, text: r.parent });
         if (!nodes.find((n) => n.id === r.child)) nodes.push({ id: r.child, text: r.child });
-        links.push({ source: r.child, target: r.parent, label: r.relation.trim() });
+        return {
+          source: r.child,
+          target: r.parent,
+          label: `${r.relation.predicted_label} (${(r.relation.probability * 100).toFixed(1)}%)`,
+        };
       });
 
-      return { nodes, links };
-    });
+      setGraphData({ nodes, links });
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -65,6 +82,7 @@ export default function RelationsPannelProps({
         >
           {loading ? "Loading..." : "Add Relation"}
         </button>
+
         <div className="mt-4 space-y-2">
           <label className="block text-white font-semibold">Load Sample CSV:</label>
           <select
@@ -78,11 +96,13 @@ export default function RelationsPannelProps({
           <button
             onClick={handleLoadSampleCSV}
             className="bg-green-600 text-white px-4 py-2 rounded w-full mt-2"
+            disabled={loading}
           >
-            Load Selected Sample
+            {loading ? "Loading..." : "Load Selected Sample"}
           </button>
         </div>
       </div>
+
       {selectedNode && (
         <div className="mt-6 p-3 border rounded bg-gray-700 text-white shadow">
           <h3 className="font-bold text-lg">Node Details</h3>
