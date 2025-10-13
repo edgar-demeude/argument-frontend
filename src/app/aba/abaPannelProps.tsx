@@ -5,6 +5,7 @@ import { API_URL } from "../../../config";
 interface ABAPanelProps {
   onGenerateABA: (file: File) => void;
   loading: boolean;
+  onToggleMode: () => void;
 }
 
 interface ExampleFile {
@@ -12,7 +13,7 @@ interface ExampleFile {
   path: string;
 }
 
-export default function ABAPanel({ onGenerateABA, loading }: ABAPanelProps) {
+export default function ABAPanel({ onGenerateABA, loading, onToggleMode }: ABAPanelProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [fileContent, setFileContent] = useState<string>("");
   const [exampleFiles, setExampleFiles] = useState<ExampleFile[]>([]);

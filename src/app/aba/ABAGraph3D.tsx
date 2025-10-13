@@ -1,18 +1,20 @@
 "use client";
 import { forwardRef } from "react";
-import Graph3DBase, { Graph3DRef } from "../components/graph3DBase";
+import GraphWrapper, { GraphWrapperRef } from "../components/GraphWrapper";
 import { GraphData, GraphNode } from "../components/types";
 
 interface ABAGraph3DProps {
   graphData: GraphData;
   onNodeClick: (node: GraphNode) => void;
+  is3D: boolean;
 }
 
-const ABAGraph3D = forwardRef<Graph3DRef, ABAGraph3DProps>(
-  ({ graphData, onNodeClick }, ref) => {
+const ABAGraph3D = forwardRef<GraphWrapperRef, ABAGraph3DProps>(
+  ({ graphData, onNodeClick, is3D }, ref) => {
     return (
-      <Graph3DBase
+      <GraphWrapper
         ref={ref}
+        is3D={is3D}
         graphData={graphData}
         onNodeClick={onNodeClick}
         linkColor={(link) => {

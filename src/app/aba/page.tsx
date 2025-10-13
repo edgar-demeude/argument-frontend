@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import ABAPanel from "./abaPannelProps";
 import ABAResultsPanel from "./abaResultsPanel";
 import { GraphData, GraphLink, GraphNode, ABAApiResponse } from "../components/types";
-import { Graph3DRef } from "../components/graph3DBase";
+import { GraphWrapperRef } from "../components/GraphWrapper";
 import { API_URL } from "../../../config";
 import ABAGraph3D from "./ABAGraph3D";
 
@@ -12,7 +12,8 @@ export default function ABAPage() {
   const [abaResults, setAbaResults] = useState<ABAApiResponse | null>(null);
   const [loading, setLoading] = useState(false);
   const [selectedNode, setSelectedNode] = useState<GraphNode | null>(null);
-  const graphRef = useRef<Graph3DRef>(null);
+  const graphRef = useRef<GraphWrapperRef>(null);
+  const [is3D, setIs3D] = useState(true);
 
   useEffect(() => {
       // Force resizing of 3D canvas after initial rendering
@@ -23,6 +24,10 @@ export default function ABAPage() {
   
       return () => clearTimeout(timer);
     }, []);
+
+  const handleToggleMode = () => {
+    setIs3D((prev) => !prev);
+  };
 
   const handleGenerateABA = async (file: File) => {
     if (!file) return;
@@ -88,7 +93,11 @@ export default function ABAPage() {
   return (
     <div className="flex h-screen">
       {/* Left panel: ABA file upload */}
-      <ABAPanel onGenerateABA={handleGenerateABA} loading={loading} />
+      <ABAPanel 
+        onGenerateABA={handleGenerateABA} 
+        loading={loading} 
+        onToggleMode={handleToggleMode}
+      />
 
       {/* Center: 3D graph */}
       <div className="flex-1 h-full overflow-hidden relative">
@@ -96,6 +105,7 @@ export default function ABAPage() {
           ref={graphRef}
           graphData={graphData}
           onNodeClick={(node) => setSelectedNode(node)}
+          is3D={is3D}
         />
       </div>
 
