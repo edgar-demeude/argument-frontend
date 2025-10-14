@@ -22,7 +22,8 @@ from pyvis.network import Network
 
 class ABAFramework:
     """
-    Represents an Assumption-Based Argumentation (ABA) framework.
+    Formal specification and implementation of Assumption-Based Argumentation (ABA) frameworks
+    with support for preference-based extensions (ABA+).
 
     Attributes:
         language (set[Literal]): The set of all literals in the framework.
@@ -36,6 +37,19 @@ class ABAFramework:
         normal_attacks (set[tuple]): Normal ABA+ attacks between assumption sets.
         reverse_attacks (set[tuple]): Reverse ABA+ attacks due to preferences.
         assumption_combinations (list[set[Literal]]): All subsets of base assumptions.
+
+        
+    Mathematical foundation :
+
+    An ABA framework is a tuple ⟨L, R, A, C⟩ where:
+        L ⊆ Lit:     The language; a finite set of literals
+        R ⊆ Rules:   The set of rules of the form h ← b₁, ..., bₙ where h ∈ L and bᵢ ∈ L
+        A ⊆ L:       The set of assumptions; A and (Lit \ L) partition the language
+        C ⊆ A × L:   The contrary relation; for each assumption a ∈ A, C(a) is its contrary
+
+    An ABA+ framework extends ABA by adding:
+        P ⊆ A × A:   A preference relation over assumptions (typically antisymmetric)
+
     """
 
     def __init__(self, language: set[Literal], rules: set[Rule], assumptions: set[Literal],
@@ -62,7 +76,6 @@ class ABAFramework:
         )
 
     def __str__(self):
-        """Return string representation of ABA framework, including preferences and arguments."""
         language_str = ', '.join(str(l) for l in sorted(self.language, key=str))
         rules_str = '\n'.join(str(r) for r in sorted(self.rules, key=str))
         assumptions_str = ', '.join(str(a) for a in sorted(self.assumptions, key=str))
@@ -91,8 +104,14 @@ class ABAFramework:
 
     # ------------------------- Core Methods -------------------------
 
-    def is_preferred(self, lit1: Literal, lit2: Literal) -> bool:
-        """Return True if lit1 is strictly preferred over lit2."""
+    def _is_preferred(self, lit1: Literal, lit2: Literal) -> bool:
+        """
+        Determines whether the first literal is strictly preferred over the second one.
+
+        Returns:
+        bool: True if lit1 is strictly preferred over lit2 according to the framework's
+              preference relation (i.e., lit1 > lit2). False otherwise.
+        """
         return lit1 in self.preferences and lit2 in self.preferences[lit1]
 
     def generate_arguments(self) -> None:
@@ -100,6 +119,19 @@ class ABAFramework:
         Generates all possible arguments in the ABA framework based on the rules, assumptions, and contraries.
 
         This method populates the self.arguments set with all arguments that can be constructed from the framework.
+
+        Example:
+        Given:
+            L = {a, b, x, y}
+            A = {a, b}
+            R = { r1: x ← a, b   r2: y ← x   r3: z ← }
+
+        Arguments generated:
+            A1: ⟨{a} ↦ a⟩
+            A2: ⟨{b} ↦ b⟩
+            A3: ⟨∅ ↦ z⟩
+            A4: ⟨{a, b} ↦ x⟩ (via r1, using A1 and A2)
+            A5: ⟨{a, b} ↦ y⟩ (via r2, using A4)
         """
         arg_count = 1
         arguments_by_claim = defaultdict(set)
@@ -168,10 +200,10 @@ class ABAFramework:
         After calling this function, the ABA framework will be non-circular and atomic.
         """
         print("\n ------- Transforming ABA framework -------\n")
-        if self.is_aba_circular():
+        if self._is_aba_circular():
             print("The ABA Framework is circular\n")
             self._make_aba_not_circular()
-        elif not self.is_aba_atomic():
+        elif not self._is_aba_atomic():
             print("The ABA Framework is not atomic\n")
             self._make_aba_atomic()
 
@@ -236,7 +268,7 @@ class ABAFramework:
         self.rules = new_rules
         self.contraries = new_contraries
 
-    def is_aba_atomic(self) -> bool:
+    def _is_aba_atomic(self) -> bool:
         """
         Checks if the ABA framework is atomic.
 
@@ -249,7 +281,7 @@ class ABAFramework:
                 return False
         return True
     
-    def is_aba_circular(self) -> bool:
+    def _is_aba_circular(self) -> bool:
         """
         Checks if the ABA framework is circular by detecting cycles in the rule dependency graph.
 
@@ -409,7 +441,30 @@ class ABAFramework:
     # ------------------------- ABA+ Methods -------------------------
 
     def make_aba_plus(self) -> None:
-        """Generate ABA+ framework: assumption combinations and ABA+ attacks."""
+        """
+        Generates the ABA+ framework by creating all assumption set combinations and computing attacks.
+
+        ABA+ extends classical ABA by incorporating preference information over assumptions directly into
+        the attack relation, allowing for attack reversal when a target assumption is preferred over an
+        attacking assumption.
+        
+        Procedure:
+            1. Ensures base_assumptions is set (preserves original assumptions before any transformation).
+            2. Generates all possible subsets of base assumptions (the power set).
+            3. Computes both normal attacks and reverse attacks between assumption sets based on:
+               - Classical ABA attack rules (arguments attacking assumptions)
+               - Preference-based attack reversal (when target assumptions are preferred)
+
+        After calling this function:
+            - self.assumption_combinations contains all subsets of base assumptions
+            - self.normal_attacks contains standard attacks between assumption sets
+            - self.reverse_attacks contains preference-reversed attacks between assumption sets
+
+        Note:
+            This method should be called after generate_arguments() has been executed, as it relies
+            on the generated arguments to determine attacks between assumption sets.
+        """
+
 
         if not getattr(self, "base_assumptions", None):
             self.base_assumptions = set(self.assumptions)
@@ -421,7 +476,33 @@ class ABAFramework:
         print(f"Generated {len(self.reverse_attacks)} reverse attacks (assumption sets)")
 
     def _generate_assumption_combinations(self) -> list[set[Literal]]:
-        """Generate all subsets of base assumptions (including empty set)."""
+        """
+        Generates all possible subsets of base assumptions (the power set).
+
+        This method creates every possible combination of assumptions, from the empty set to the complete
+        set of all base assumptions. Each combination represents a potential stance or position in the
+        argumentation framework.
+
+        Returns:
+            list[set[Literal]]: A list where each element is a set of literals representing one possible
+                                combination of assumptions. The list includes:
+                                - The empty set ∅
+                                - All singleton sets {a} for each assumption a
+                                - All pairs, triples, etc., up to the full set of assumptions
+
+        Example:
+            If base_assumptions = {a, b}, the result will be:
+            [
+                set(),      # empty set
+                {a},        # singleton
+                {b},        # singleton
+                {a, b}      # complete set
+            ]
+
+        Note:
+            For n base assumptions, this generates 2^n combinations. The computational complexity
+            can become significant for large assumption sets.
+        """
         source_assumptions = getattr(self, "base_assumptions", self.assumptions)
         all_combos = []
         for r in range(len(source_assumptions) + 1):
@@ -430,16 +511,83 @@ class ABAFramework:
         return all_combos
 
     def _arguments_from_assumptions(self, S: set[Literal]) -> set[Argument]:
-        """Return arguments whose leaves are subsets of S."""
+        """
+        Returns all arguments that can be constructed using only assumptions from set S.
+
+        An argument is valid for assumption set S if all its supporting assumptions (leaves) are
+        contained within S. This is crucial for determining which arguments are available when
+        reasoning from a particular set of assumptions.
+
+        Args:
+            S (set[Literal]): A set of assumptions to check against.
+
+        Returns:
+            set[Argument]: The set of all arguments whose leaves (supporting assumptions) are
+                          subsets of S. This includes:
+                          - Arguments with leaves ⊆ S
+                          - Arguments with no leaves (derived from rules with empty bodies)
+
+        Example:
+            Given:
+                - Argument A1 with leaves {a, b}
+                - Argument A2 with leaves {a}
+                - Argument A3 with leaves {c}
+                - S = {a, b}
+
+            Returns: {A1, A2} (A3 is excluded because c ∉ S)
+        """
         return {arg for arg in self.arguments if arg.leaves.issubset(S) or (not arg.leaves and set() <= S)}
 
     def _generate_normal_reverse_attacks(self) -> None:
         """
-        Generate ABA+ attacks between assumption sets.
+        Generates both normal and reverse attacks between assumption sets in ABA+.
 
-        - Normal: X -> Y if there exists ax from X attacking ay from Y
-                without preference-based reversal.
-        - Reverse: Y -> X if SOME y in Y is strictly preferred over SOME x in X.
+        This is the core method for implementing preference-based attack reversal in ABA+. It examines
+        all pairs of assumption sets and determines whether attacks exist and whether they should be
+        reversed based on preference information.
+
+        Attack Types:
+            1. Normal Attack (X attacks Y):
+               - There exists an argument from X that attacks an argument from Y
+               - The attack is based on contraries (classical ABA attack)
+               - No preference reversal occurs (i.e., no assumption in Y is preferred over assumptions in X)
+
+            2. Reverse Attack (Y attacks X):
+               - There would normally be an attack from X to Y
+               - BUT some assumption y ∈ Y is strictly preferred over some assumption x ∈ X
+               - The preference relationship reverses the direction of the attack
+
+        Procedure:
+            1. Clears any existing normal and reverse attacks.
+            2. Generates assumption combinations if not already done.
+            3. For each pair of assumption sets (X, Y):
+               a. Gets all arguments constructible from X and Y respectively.
+               b. Checks if any argument from X attacks any argument from Y (via contraries).
+               c. If an attack exists:
+                  - Checks if any assumption in Y is preferred over any assumption in X.
+                  - If yes → creates a reverse attack (Y attacks X).
+                  - If no → creates a normal attack (X attacks Y).
+            4. Adds subset closure attacks:
+               - If X attacks Y normally, then any superset of X also attacks Y.
+               - If Y attacks X in reverse, then any superset of Y also attacks X.
+
+        Mathematical Definition:
+            - Normal: X ↝ Y iff ∃ax ∈ Args(X), ∃ay ∈ Args(Y): ax attacks ay ∧ ¬(∃y∈Y, ∃x∈X: y > x)
+            - Reverse: Y ↝ X iff ∃ax ∈ Args(X), ∃ay ∈ Args(Y): ax attacks ay ∧ (∃y∈Y, ∃x∈X: y > x)
+
+        Side Effects:
+            Populates self.normal_attacks and self.reverse_attacks with frozenset tuples representing
+            the attack relationships between assumption sets.
+
+        Example:
+            Given:
+                - Assumptions: {a, b, c}
+                - Preferences: b > a (b is preferred over a)
+                - Argument from {a} attacks argument from {b}
+
+            Result:
+                - Without preferences: {a} ↝ {b} (normal attack)
+                - With preferences: {b} ↝ {a} (reverse attack, because b > a)
         """
         self.normal_attacks.clear()
         self.reverse_attacks.clear()
@@ -459,7 +607,7 @@ class ABAFramework:
                     for ay in args_Y:
                         for contrary in self.contraries:
                             if ax.claim == contrary.contrary_attacker and contrary.contraried_literal in ay.leaves:
-                                reverse = any(self.is_preferred(y, x) for y in Y for x in X)
+                                reverse = any(self._is_preferred(y, x) for y in Y for x in X)
                                 if reverse:
                                     self.reverse_attacks.add((frozenset(Y), frozenset(X)))
                                 else:
@@ -488,7 +636,6 @@ class ABAFramework:
         # Add the additional attacks
         self.normal_attacks.update(additional_normal)
         self.reverse_attacks.update(additional_reverse)
-
 
     
     # ------------------------- Visualization -------------------------
