@@ -55,6 +55,7 @@ const ForceGraph3DComponent = forwardRef<ForceGraph3DComponentRef, ForceGraph3DC
         height={height}
         graphData={graphData}
         backgroundColor="#1e293b"
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         nodeLabel={(node: any) => nodeLabel?.(node as GraphNode) ?? node.id} // cast here
         linkLabel="label"
         nodeAutoColorBy="id"

@@ -18,11 +18,13 @@ interface ForceGraph2DComponentProps {
   onNodeClick: (node: GraphNode) => void;
   width: number;
   height: number;
-  linkColor?: (link: any) => string; // <-- accept linkColor
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  linkColor?: (link: any) => string;
 }
 
 const ForceGraph2DComponent = forwardRef<ForceGraph2DComponentRef, ForceGraph2DComponentProps>(
   ({ graphData, nodeLabel, onNodeClick, width, height, linkColor }, ref) => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const fgRef = useRef<any>(null);
     const [mounted, setMounted] = useState(false);
 
@@ -41,6 +43,7 @@ const ForceGraph2DComponent = forwardRef<ForceGraph2DComponentRef, ForceGraph2DC
           fg.d3Force("center")?.x(0).y(0);
           fg.d3Force(
             "collision",
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             forceCollide((node: any) => (node.__collisionRadius ?? 10) + 10).strength(0.5)
           );
           fg.d3ReheatSimulation();
@@ -66,6 +69,7 @@ const ForceGraph2DComponent = forwardRef<ForceGraph2DComponentRef, ForceGraph2DC
         width={width}
         height={height}
         graphData={graphData}
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         nodeLabel={(node: any) => nodeLabel?.(node as GraphNode) ?? node.id}
         backgroundColor="#1e293b"
         onNodeClick={(node) => onNodeClick(node as GraphNode)}
@@ -73,6 +77,7 @@ const ForceGraph2DComponent = forwardRef<ForceGraph2DComponentRef, ForceGraph2DC
         linkDirectionalArrowRelPos={0.95}
         linkColor={
           linkColor ??
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           ((link: any) => {
             if (link.label === "attack") return "#f87171"; // red
             if (link.label === "support") return "#34d399"; // green
@@ -80,6 +85,7 @@ const ForceGraph2DComponent = forwardRef<ForceGraph2DComponentRef, ForceGraph2DC
             return "#aaa"; // fallback
           })
         }
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         linkWidth={(link: any) => {
           if (link.label === "attack") return 1.5;
           if (link.label === "support") return 1.2;
@@ -90,6 +96,7 @@ const ForceGraph2DComponent = forwardRef<ForceGraph2DComponentRef, ForceGraph2DC
         linkDirectionalParticles={2}
         linkDirectionalParticleSpeed={0.005}
         linkDirectionalParticleWidth={2}
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         nodeCanvasObject={(node: any, ctx, globalScale) => {
           const label = node.text || node.id;
           const maxWidth = 120;
@@ -171,6 +178,7 @@ const ForceGraph2DComponent = forwardRef<ForceGraph2DComponentRef, ForceGraph2DC
           node.__bckgHeight = bckgHeight;
           node.__collisionRadius = Math.max(bckgWidth, bckgHeight) / 2;
         }}
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         nodePointerAreaPaint={(node: any, color, ctx) => {
           const w = node.__bckgWidth ?? 20;
           const h = node.__bckgHeight ?? 16;
