@@ -37,7 +37,7 @@ const ForceGraph2DComponent = forwardRef<ForceGraph2DComponentRef, ForceGraph2DC
         const fg = fgRef.current;
         if (fg) {
           fg.d3Force("link")?.distance(50).strength(1);
-          fg.d3Force("charge")?.strength(-500);
+          fg.d3Force("charge")?.strength(-300);
           fg.d3Force("center")?.x(0).y(0);
           fg.d3Force(
             "collision",
