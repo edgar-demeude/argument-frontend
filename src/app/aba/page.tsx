@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
-import ABAPanel from "./abaPannelProps";
+import ABAPanel from "./abaPanelProps";
 import ABAResultsPanel from "./abaResultsPanel";
 import { GraphData, GraphLink, GraphNode, ABAApiResponse } from "../components/types";
 import { GraphWrapperRef } from "../components/GraphWrapper";
@@ -12,77 +12,76 @@ export default function ABAPage() {
   const [abaResults, setAbaResults] = useState<ABAApiResponse | null>(null);
   const [loading, setLoading] = useState(false);
   const [selectedNode, setSelectedNode] = useState<GraphNode | null>(null);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null); // currently selected file
   const graphRef = useRef<GraphWrapperRef>(null);
   const [is3D, setIs3D] = useState(true);
 
   useEffect(() => {
-      // Force resizing of 3D canvas after initial rendering
-      const timer = setTimeout(() => {
-        window.dispatchEvent(new Event("resize"));
-        graphRef.current?.zoomToFit?.(400, 50);
-      }, 200);
-  
-      return () => clearTimeout(timer);
-    }, []);
+    const timer = setTimeout(() => {
+      window.dispatchEvent(new Event("resize"));
+      graphRef.current?.zoomToFit?.(400, 50);
+    }, 200);
+    return () => clearTimeout(timer);
+  }, []);
 
-  const handleToggleMode = () => {
-    setIs3D((prev) => !prev);
+  const handleToggleMode = () => setIs3D(prev => !prev);
+
+  const generateGraph = (data: ABAApiResponse) => {
+    const cleanLabel = (arg: string) =>
+      arg.startsWith("[") && arg.indexOf("]") > 0 ? arg.slice(1, arg.indexOf("]")) : arg;
+
+    const nodes: GraphNode[] = (data.arguments ?? []).map(arg => ({ id: cleanLabel(arg), text: arg }));
+
+    const links: GraphLink[] = (data.attacks ?? []).map(att => {
+      const parts = att.split("→").map(p => p.trim());
+      return { source: cleanLabel(parts[0]), target: cleanLabel(parts[1]), label: "attack" };
+    });
+
+    const reverseLinks: GraphLink[] = (data.reverse_attacks ?? []).map((r, i) => ({
+      source: nodes[i % nodes.length]?.id ?? `node-${i}`,
+      target: nodes[(i + 1) % nodes.length]?.id ?? `node-${i + 1}`,
+      label: "reverse",
+      dashed: true,
+    }));
+
+    setGraphData({ nodes, links: [...links, ...reverseLinks] });
   };
 
-  const handleGenerateABA = async (file: File) => {
-    if (!file) return;
+  // Dedicated ABA function
+  const handleGenerateABA = async () => {
+    if (!selectedFile) return alert("Please select a file first");
     setLoading(true);
-
     try {
       const formData = new FormData();
-      formData.append("file", file);
-
-      const res = await fetch(`${API_URL}/aba-upload`, {
-        method: "POST",
-        body: formData,
-      });
-
+      formData.append("file", selectedFile);
+      const res = await fetch(`${API_URL}/aba-upload`, { method: "POST", body: formData });
       const data: ABAApiResponse = await res.json();
       setAbaResults(data);
+      generateGraph(data);
+      setTimeout(() => graphRef.current?.zoomToFit?.(400, 50), 150);
+    } catch (err) {
+      console.error("Error generating ABA:", err);
+      setAbaResults(null);
+      setGraphData({ nodes: [], links: [] });
+    } finally {
+      setLoading(false);
+    }
+  };
 
-      // Transform results into nodes/links for 3D graph
-      const cleanLabel = (arg: string) => {
-        if (arg.startsWith("[") && arg.indexOf("]") > 0) {
-          return arg.slice(1, arg.indexOf("]"));
-        }
-        return arg;
-      };
-
-      // Nodes
-      const nodes: GraphNode[] = (data.arguments ?? []).map((arg) => {
-        const id = cleanLabel(arg);
-        return { id, text: arg };
-      });
-
-      // Links from attacks
-      const links: GraphLink[] = (data.attacks ?? []).map((att) => {
-        // ex: "[A7] -> [A5]"
-        const parts = att.split("→").map((p) => p.trim());
-        const source = cleanLabel(parts[0]);
-        const target = cleanLabel(parts[1]);
-        return { source, target, label: "attack" };
-      });
-
-      // Optional: reverse attacks with dashed style or different color
-      const reverseLinks: GraphLink[] = (data.reverse_attacks ?? []).map((r, i) => {
-        const source = nodes[i % nodes.length]?.id ?? `node-${i}`;
-        const target = nodes[(i + 1) % nodes.length]?.id ?? `node-${i + 1}`;
-        return { source, target, label: "reverse", dashed: true };
-      });
-
-      // Merge all links
-      setGraphData({ nodes, links: [...links, ...reverseLinks] });
-
-      setTimeout(() => {
-        graphRef.current?.zoomToFit?.(400, 50);
-      }, 150);
-    } catch (error) {
-      console.error("Error generating ABA:", error);
+  // Dedicated ABA+ function
+  const handleGenerateABAPlus = async () => {
+    if (!selectedFile) return alert("Please select a file first");
+    setLoading(true);
+    try {
+      const formData = new FormData();
+      formData.append("file", selectedFile);
+      const res = await fetch(`${API_URL}/aba-plus-upload`, { method: "POST", body: formData });
+      const data: ABAApiResponse = await res.json();
+      setAbaResults(data);
+      generateGraph(data);
+      setTimeout(() => graphRef.current?.zoomToFit?.(400, 50), 150);
+    } catch (err) {
+      console.error("Error generating ABA+:", err);
       setAbaResults(null);
       setGraphData({ nodes: [], links: [] });
     } finally {
@@ -92,25 +91,31 @@ export default function ABAPage() {
 
   return (
     <div className="flex h-screen">
-      {/* Left panel: ABA file upload */}
-      <ABAPanel 
-        onGenerateABA={handleGenerateABA} 
-        loading={loading} 
+      <ABAPanel
+        selectedFile={selectedFile}
+        setSelectedFile={setSelectedFile}
+        fileContent={selectedFile ? fileContent(selectedFile) : ""}
+        onGenerateABA={handleGenerateABA}
+        onGenerateABAPlus={handleGenerateABAPlus}
+        loading={loading}
         onToggleMode={handleToggleMode}
       />
 
-      {/* Center: 3D graph */}
       <div className="flex-1 h-full overflow-hidden relative">
         <ABAGraph3D
           ref={graphRef}
           graphData={graphData}
-          onNodeClick={(node) => setSelectedNode(node)}
+          onNodeClick={setSelectedNode}
           is3D={is3D}
         />
       </div>
 
-      {/* Right panel: ABA+ results */}
       <ABAResultsPanel results={abaResults} />
     </div>
   );
+}
+
+// helper to read file content
+function fileContent(file: File) {
+  return file ? file.name : "";
 }
