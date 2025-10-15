@@ -20,6 +20,7 @@ interface GraphWrapperProps {
   linkCurvature?: (link: LinkObject) => number;
   linkArrowLength?: (link: LinkObject) => number;
   linkWidth?: (link: LinkObject) => number;
+  nodeLabel?: (node: GraphNode) => string;
 }
 
 interface Dimensions {
@@ -37,6 +38,7 @@ const GraphWrapper = forwardRef<GraphWrapperRef, GraphWrapperProps>(
       linkWidth,
       linkCurvature,
       linkArrowLength,
+      nodeLabel,
     },
     ref
   ) => {
@@ -113,6 +115,7 @@ const GraphWrapper = forwardRef<GraphWrapperRef, GraphWrapperProps>(
             linkCurvature={linkCurvature}
             linkArrowLength={linkArrowLength}
             linkWidth={linkWidth}
+            nodeLabel={nodeLabel}
             width={dimensions.width}
             height={dimensions.height}
           />
@@ -121,7 +124,9 @@ const GraphWrapper = forwardRef<GraphWrapperRef, GraphWrapperProps>(
             key="force-graph-2d"
             ref={graph2DRef}
             graphData={graphData}
+            linkColor={linkColor}
             onNodeClick={onNodeClick}
+            nodeLabel={nodeLabel}
             width={dimensions.width}
             height={dimensions.height}
           />

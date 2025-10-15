@@ -5,17 +5,19 @@ import ABAResultsPanel from "./abaResultsPanel";
 import { GraphData, GraphLink, GraphNode, ABAApiResponse } from "../components/types";
 import { GraphWrapperRef } from "../components/GraphWrapper";
 import { API_URL } from "../../../config";
-import ABAGraph3D from "./ABAGraph3D";
+import ABAGraph3D from "./ABAGraph";
 
 export default function ABAPage() {
   const [graphData, setGraphData] = useState<GraphData>({ nodes: [], links: [] });
   const [abaResults, setAbaResults] = useState<ABAApiResponse | null>(null);
   const [loading, setLoading] = useState(false);
   const [selectedNode, setSelectedNode] = useState<GraphNode | null>(null);
-  const [selectedFile, setSelectedFile] = useState<File | null>(null); // currently selected file
-  const graphRef = useRef<GraphWrapperRef>(null);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [is3D, setIs3D] = useState(true);
+  const [originalGraphData, setOriginalGraphData] = useState<GraphData | null>(null);
+  const graphRef = useRef<GraphWrapperRef>(null);
 
+  // Initial resize / zoom
   useEffect(() => {
     const timer = setTimeout(() => {
       window.dispatchEvent(new Event("resize"));
@@ -24,8 +26,33 @@ export default function ABAPage() {
     return () => clearTimeout(timer);
   }, []);
 
-  const handleToggleMode = () => setIs3D(prev => !prev);
+  // Zoom when graphData changes
+  useEffect(() => {
+    if (graphData.nodes.length > 0) {
+      setTimeout(() => {
+        graphRef.current?.zoomToFit?.(400, 50);
+      }, 150);
+    }
+  }, [graphData]);
 
+  // --- Toggle 2D/3D
+  const handleToggleMode = () => {
+    setIs3D(prev => !prev);
+    if (originalGraphData) setGraphData(originalGraphData);
+    setTimeout(() => graphRef.current?.zoomToFit?.(400, 50), 100);
+  };
+
+  // --- Helper: map internal ID to assumption set
+  const buildArgumentMap = (args: string[]): Record<string, string> => {
+    const map: Record<string, string> = {};
+    args.forEach((arg) => {
+      const match = arg.match(/^\[([A0-9]+)\]=\{([^}]*)\}/);
+      if (match) map[match[1]] = `{${match[2]}}`;
+    });
+    return map;
+  };
+
+  // --- Build graph nodes and links
   const generateGraph = (data: ABAApiResponse) => {
     const cleanLabel = (arg: string) =>
       arg.startsWith("[") && arg.indexOf("]") > 0 ? arg.slice(1, arg.indexOf("]")) : arg;
@@ -47,7 +74,7 @@ export default function ABAPage() {
     setGraphData({ nodes, links: [...links, ...reverseLinks] });
   };
 
-  // Dedicated ABA function
+  // --- Generate ABA
   const handleGenerateABA = async () => {
     if (!selectedFile) return alert("Please select a file first");
     setLoading(true);
@@ -58,9 +85,8 @@ export default function ABAPage() {
       const data: ABAApiResponse = await res.json();
       setAbaResults(data);
       generateGraph(data);
-      setTimeout(() => graphRef.current?.zoomToFit?.(400, 50), 150);
     } catch (err) {
-      console.error("Error generating ABA:", err);
+      console.error(err);
       setAbaResults(null);
       setGraphData({ nodes: [], links: [] });
     } finally {
@@ -68,7 +94,7 @@ export default function ABAPage() {
     }
   };
 
-  // Dedicated ABA+ function
+  // --- Generate ABA+
   const handleGenerateABAPlus = async () => {
     if (!selectedFile) return alert("Please select a file first");
     setLoading(true);
@@ -79,9 +105,8 @@ export default function ABAPage() {
       const data: ABAApiResponse = await res.json();
       setAbaResults(data);
       generateGraph(data);
-      setTimeout(() => graphRef.current?.zoomToFit?.(400, 50), 150);
     } catch (err) {
-      console.error("Error generating ABA+:", err);
+      console.error(err);
       setAbaResults(null);
       setGraphData({ nodes: [], links: [] });
     } finally {
@@ -94,11 +119,12 @@ export default function ABAPage() {
       <ABAPanel
         selectedFile={selectedFile}
         setSelectedFile={setSelectedFile}
-        fileContent={selectedFile ? fileContent(selectedFile) : ""}
+        fileContent={selectedFile?.name ?? ""}
         onGenerateABA={handleGenerateABA}
         onGenerateABAPlus={handleGenerateABAPlus}
         loading={loading}
         onToggleMode={handleToggleMode}
+        is3D={is3D} // <-- passe l'état pour le bouton
       />
 
       <div className="flex-1 h-full overflow-hidden relative">
@@ -113,9 +139,4 @@ export default function ABAPage() {
       <ABAResultsPanel results={abaResults} />
     </div>
   );
-}
-
-// helper to read file content
-function fileContent(file: File) {
-  return file ? file.name : "";
 }
