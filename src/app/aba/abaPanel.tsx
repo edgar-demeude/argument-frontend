@@ -5,7 +5,6 @@ import { useABAFileLoader } from "./utils/useABAFileLoader";
 interface ABAPanelProps {
   selectedFile: File | null;
   setSelectedFile: (file: File) => void;
-  fileContent: string;
   onGenerateABA: () => void;
   onGenerateABAPlus: () => void;
   loading: boolean;
@@ -24,8 +23,15 @@ export default function ABAPanel({
 }: ABAPanelProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const { fileContent, exampleFiles, handleFileChange, handleExampleSelect } =
+  const { fileContent, setFileContent, exampleFiles, handleFileChange, handleExampleSelect } =
     useABAFileLoader({ fileInputRef, setSelectedFile });
+
+  // Sync textarea content to selectedFile
+  const handleContentChange = (content: string) => {
+    setFileContent(content);
+    const tempFile = new File([content], selectedFile?.name || "manual.txt", { type: "text/plain" });
+    setSelectedFile(tempFile);
+  };
 
   return (
     <div className="w-1/4 bg-gray-800 p-5 overflow-y-auto text-white flex-shrink-0">
@@ -41,9 +47,10 @@ export default function ABAPanel({
         </button>
       </div>
 
-      {/* File upload section */}
+      {/* File upload / manual input */}
       <div className="p-4 bg-gray-700 rounded-lg shadow-inner mb-6">
-        <label className="block text-white font-semibold mb-2">Upload ABA File</label>
+        <label className="block text-white font-semibold mb-2">ABA File</label>
+
         <label
           className={`block w-full p-2 text-center rounded-lg cursor-pointer border border-gray-600 bg-gray-800 hover:border-gray-400 transition ${
             loading ? "opacity-50 cursor-not-allowed" : ""
@@ -74,11 +81,13 @@ export default function ABAPanel({
           ))}
         </select>
 
-        {fileContent && (
-          <div className="mt-4 p-3 bg-gray-900 border border-gray-700 rounded-lg text-sm text-gray-300 max-h-40 overflow-auto">
-            <pre>{fileContent}</pre>
-          </div>
-        )}
+        {/* Editable textarea for file content */}
+        <textarea
+          className="mt-4 w-full h-40 p-2 bg-gray-900 border border-gray-700 rounded-lg text-sm text-gray-300 resize-none focus:outline-none focus:ring-2 focus:ring-green-500"
+          value={fileContent}
+          onChange={(e) => handleContentChange(e.target.value)}
+          placeholder="Type or paste ABA content here..."
+        />
       </div>
 
       {/* Generate ABA buttons */}

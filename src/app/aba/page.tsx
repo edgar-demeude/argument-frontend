@@ -137,7 +137,6 @@ export default function ABAPage() {
       <ABAPanel
         selectedFile={selectedFile}
         setSelectedFile={setSelectedFile}
-        fileContent={selectedFile?.name ?? ""}
         onGenerateABA={handleGenerateABA}
         onGenerateABAPlus={handleGenerateABAPlus}
         loading={loading}

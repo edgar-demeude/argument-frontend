@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState, RefObject } from "react";
+import { useEffect, useState } from "react";
 import { API_URL } from "../../../../config";
 
 export interface ExampleFile {
@@ -8,7 +8,7 @@ export interface ExampleFile {
 }
 
 interface UseABAFileLoaderProps {
-  fileInputRef: React.RefObject<HTMLInputElement | null>; //
+  fileInputRef: React.RefObject<HTMLInputElement | null>;
   setSelectedFile: (file: File) => void;
 }
 
@@ -58,6 +58,7 @@ export function useABAFileLoader({ fileInputRef, setSelectedFile }: UseABAFileLo
 
   return {
     fileContent,
+    setFileContent, // <--- expose this
     exampleFiles,
     handleFileChange,
     handleExampleSelect,
