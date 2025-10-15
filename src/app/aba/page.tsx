@@ -1,11 +1,11 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
-import ABAPanel from "./abaPanelProps";
+import ABAPanel from "./abaPanel";
 import ABAResultsPanel from "./abaResultsPanel";
+import ABAGraph3D from "./ABAGraph";
 import { GraphData, GraphLink, GraphNode, ABAApiResponse } from "../components/types";
 import { GraphWrapperRef } from "../components/GraphWrapper";
 import { API_URL } from "../../../config";
-import ABAGraph3D from "./ABAGraph";
 
 export default function ABAPage() {
   const [graphData, setGraphData] = useState<GraphData>({ nodes: [], links: [] });
@@ -17,54 +17,52 @@ export default function ABAPage() {
   const [originalGraphData, setOriginalGraphData] = useState<GraphData | null>(null);
   const graphRef = useRef<GraphWrapperRef>(null);
 
-  // Initial resize / zoom
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      window.dispatchEvent(new Event("resize"));
-      graphRef.current?.zoomToFit?.(400, 50);
-    }, 200);
-    return () => clearTimeout(timer);
-  }, []);
-
-  // Zoom when graphData changes
-  useEffect(() => {
-    if (graphData.nodes.length > 0) {
-      setTimeout(() => {
-        graphRef.current?.zoomToFit?.(400, 50);
-      }, 150);
-    }
-  }, [graphData]);
-
-  // --- Toggle 2D/3D
-  const handleToggleMode = () => {
-    setIs3D(prev => !prev);
-    if (originalGraphData) setGraphData(originalGraphData);
-    setTimeout(() => graphRef.current?.zoomToFit?.(400, 50), 100);
-  };
-
-  // --- Helper: map internal ID to assumption set
-  const buildArgumentMap = (args: string[]): Record<string, string> => {
+  // --- Helpers ---
+  /**
+   * Extracts the display name for ABA+ nodes from argument string.
+   * Example: "[A8]={c,a} ⊢ s" → "{c,a}".
+   */
+  const getNodeNameMap = (data: ABAApiResponse): Record<string, string> => {
     const map: Record<string, string> = {};
-    args.forEach((arg) => {
+    (data.arguments ?? []).forEach(arg => {
       const match = arg.match(/^\[([A0-9]+)\]=\{([^}]*)\}/);
-      if (match) map[match[1]] = `{${match[2]}}`;
+      if (match) {
+        map[match[1]] = `{${match[2]}}`;
+      }
     });
     return map;
   };
 
-  // --- Build graph nodes and links
+  /**
+   * Cleans the internal node id from argument string.
+   * Example: "[A8]={c,a} ⊢ s" → "A8".
+   */
+  const cleanLabel = (arg: string) =>
+    arg.startsWith("[") && arg.indexOf("]") > 0 ? arg.slice(1, arg.indexOf("]")) : arg;
+
+  /**
+   * Generates graph nodes and links for ABA/ABA+.
+   * For ABA+, node names are set to assumption sets (e.g. "{a,c}").
+   * For ABA, node names are set to their internal id (e.g. "A1").
+   */
   const generateGraph = (data: ABAApiResponse) => {
-    const cleanLabel = (arg: string) =>
-      arg.startsWith("[") && arg.indexOf("]") > 0 ? arg.slice(1, arg.indexOf("]")) : arg;
-
-    const nodes: GraphNode[] = (data.arguments ?? []).map(arg => ({ id: cleanLabel(arg), text: arg }));
-
-    const links: GraphLink[] = (data.attacks ?? []).map(att => {
-      const parts = att.split("→").map(p => p.trim());
-      return { source: cleanLabel(parts[0]), target: cleanLabel(parts[1]), label: "attack" };
+    const nodeNameMap = getNodeNameMap(data);
+    const isABAPlus = data.reverse_attacks && data.reverse_attacks.length > 0;
+    const nodes: GraphNode[] = (data.arguments ?? []).map(arg => {
+      const id = cleanLabel(arg);
+      // For ABA+, use assumption set as name; for ABA, use internal id (e.g. "A1")
+      return {
+        id,
+        text: isABAPlus && nodeNameMap[id] ? nodeNameMap[id] : id,
+      };
     });
 
-    const reverseLinks: GraphLink[] = (data.reverse_attacks ?? []).map((r, i) => ({
+    const links: GraphLink[] = (data.attacks ?? []).map(att => {
+      const [source, target] = att.split("→").map(p => p.trim());
+      return { source: cleanLabel(source), target: cleanLabel(target), label: "attack" };
+    });
+
+    const reverseLinks: GraphLink[] = (data.reverse_attacks ?? []).map((_, i) => ({
       source: nodes[i % nodes.length]?.id ?? `node-${i}`,
       target: nodes[(i + 1) % nodes.length]?.id ?? `node-${i + 1}`,
       label: "reverse",
@@ -74,14 +72,51 @@ export default function ABAPage() {
     setGraphData({ nodes, links: [...links, ...reverseLinks] });
   };
 
-  // --- Generate ABA
-  const handleGenerateABA = async () => {
+  // --- Zoom handling ---
+  const zoomGraph = (delay = 150) => {
+    setTimeout(() => graphRef.current?.zoomToFit?.(400, 50), delay);
+  };
+
+  useEffect(() => {
+    zoomGraph(200); // initial zoom
+  }, []);
+
+  useEffect(() => {
+    if (graphData.nodes.length > 0) zoomGraph(150);
+  }, [graphData]);
+
+    useEffect(() => {
+    const resize = () => {
+      window.dispatchEvent(new Event("resize"));
+      graphRef.current?.zoomToFit?.(400, 50);
+    };
+
+    // Call after mount
+    const timer1 = setTimeout(resize, 100);
+    const timer2 = setTimeout(resize, 300); // ensure layout is done
+
+    return () => {
+      clearTimeout(timer1);
+      clearTimeout(timer2);
+    };
+  }, []);
+
+  // --- Toggle 2D/3D ---
+  const handleToggleMode = () => {
+    setIs3D(prev => !prev);
+    if (originalGraphData) setGraphData(originalGraphData);
+    zoomGraph(100);
+  };
+
+  // --- File upload / ABA generation ---
+  const uploadFileAndGenerate = async (endpoint: string) => {
     if (!selectedFile) return alert("Please select a file first");
+
     setLoading(true);
     try {
       const formData = new FormData();
       formData.append("file", selectedFile);
-      const res = await fetch(`${API_URL}/aba-upload`, { method: "POST", body: formData });
+      const res = await fetch(`${API_URL}/${endpoint}`, { method: "POST", body: formData });
       const data: ABAApiResponse = await res.json();
       setAbaResults(data);
       generateGraph(data);
@@ -94,25 +129,8 @@ export default function ABAPage() {
     }
   };
 
-  // --- Generate ABA+
-  const handleGenerateABAPlus = async () => {
-    if (!selectedFile) return alert("Please select a file first");
-    setLoading(true);
-    try {
-      const formData = new FormData();
-      formData.append("file", selectedFile);
-      const res = await fetch(`${API_URL}/aba-plus-upload`, { method: "POST", body: formData });
-      const data: ABAApiResponse = await res.json();
-      setAbaResults(data);
-      generateGraph(data);
-    } catch (err) {
-      console.error(err);
-      setAbaResults(null);
-      setGraphData({ nodes: [], links: [] });
-    } finally {
-      setLoading(false);
-    }
-  };
+  const handleGenerateABA = () => uploadFileAndGenerate("aba-upload");
+  const handleGenerateABAPlus = () => uploadFileAndGenerate("aba-plus-upload");
 
   return (
     <div className="flex h-screen">
@@ -124,7 +142,7 @@ export default function ABAPage() {
         onGenerateABAPlus={handleGenerateABAPlus}
         loading={loading}
         onToggleMode={handleToggleMode}
-        is3D={is3D} // <-- passe l'état pour le bouton
+        is3D={is3D}
       />
 
       <div className="flex-1 h-full overflow-hidden relative">
