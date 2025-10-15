@@ -12,10 +12,12 @@ interface RelationsGraphProps {
 
 const RelationsGraph = forwardRef<GraphWrapperRef, RelationsGraphProps>(
   ({ graphData, onNodeClick, is3D }, ref) => {
-    const linkColor = (link: LinkObject): string =>
-      typeof link.label === "string"
-        ? link.label.includes("Support") ? "#34d399" : "#f87171"
-        : "#999999";
+    const linkColor = (link: LinkObject): string => {
+      if (typeof link.label === "string") {
+        return link.label.includes("Support") ? "#34d399" : "#f87171";
+      }
+      return "#999999";
+    };
 
     return (
       <GraphWrapper

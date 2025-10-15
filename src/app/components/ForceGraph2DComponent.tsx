@@ -14,14 +14,15 @@ export interface ForceGraph2DComponentRef {
 
 interface ForceGraph2DComponentProps {
   graphData: GraphData;
+  nodeLabel?: (node: GraphNode) => string;
   onNodeClick: (node: GraphNode) => void;
   width: number;
   height: number;
+  linkColor?: (link: any) => string; // <-- accept linkColor
 }
 
 const ForceGraph2DComponent = forwardRef<ForceGraph2DComponentRef, ForceGraph2DComponentProps>(
-  ({ graphData, onNodeClick, width, height }, ref) => {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  ({ graphData, nodeLabel, onNodeClick, width, height, linkColor }, ref) => {
     const fgRef = useRef<any>(null);
     const [mounted, setMounted] = useState(false);
 
@@ -32,7 +33,6 @@ const ForceGraph2DComponent = forwardRef<ForceGraph2DComponentRef, ForceGraph2DC
     useEffect(() => {
       if (!mounted || !fgRef.current) return;
 
-      // Configure forces for 2D with proper spacing
       const timer = setTimeout(() => {
         const fg = fgRef.current;
         if (fg) {
@@ -41,7 +41,6 @@ const ForceGraph2DComponent = forwardRef<ForceGraph2DComponentRef, ForceGraph2DC
           fg.d3Force("center")?.x(0).y(0);
           fg.d3Force(
             "collision",
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             forceCollide((node: any) => (node.__collisionRadius ?? 10) + 10).strength(0.5)
           );
           fg.d3ReheatSimulation();
@@ -51,7 +50,6 @@ const ForceGraph2DComponent = forwardRef<ForceGraph2DComponentRef, ForceGraph2DC
       return () => clearTimeout(timer);
     }, [mounted, graphData]);
 
-    // Expose zoomToFit via ref
     useEffect(() => {
       if (ref && "current" in ref) {
         ref.current = {
@@ -68,20 +66,30 @@ const ForceGraph2DComponent = forwardRef<ForceGraph2DComponentRef, ForceGraph2DC
         width={width}
         height={height}
         graphData={graphData}
+        nodeLabel={(node: any) => nodeLabel?.(node as GraphNode) ?? node.id}
         backgroundColor="#1e293b"
         onNodeClick={(node) => onNodeClick(node as GraphNode)}
         linkDirectionalArrowLength={35}
         linkDirectionalArrowRelPos={0.95}
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        linkColor={(link: any) =>
-          link.label?.includes("Support") ? "#34d399" : "#f87171"
+        linkColor={
+          linkColor ??
+          ((link: any) => {
+            if (link.label === "attack") return "#f87171"; // red
+            if (link.label === "support") return "#34d399"; // green
+            if (link.label === "reverse") return "#60a5fa"; // blue
+            return "#aaa"; // fallback
+          })
         }
-        linkWidth={() => 2}
+        linkWidth={(link: any) => {
+          if (link.label === "attack") return 1.5;
+          if (link.label === "support") return 1.2;
+          if (link.label === "reverse") return 1.2;
+          return 1;
+        }}
         d3VelocityDecay={0.7}
         linkDirectionalParticles={2}
         linkDirectionalParticleSpeed={0.005}
         linkDirectionalParticleWidth={2}
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         nodeCanvasObject={(node: any, ctx, globalScale) => {
           const label = node.text || node.id;
           const maxWidth = 120;
@@ -163,33 +171,11 @@ const ForceGraph2DComponent = forwardRef<ForceGraph2DComponentRef, ForceGraph2DC
           node.__bckgHeight = bckgHeight;
           node.__collisionRadius = Math.max(bckgWidth, bckgHeight) / 2;
         }}
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         nodePointerAreaPaint={(node: any, color, ctx) => {
           const w = node.__bckgWidth ?? 20;
           const h = node.__bckgHeight ?? 16;
           ctx.fillStyle = color;
           ctx.fillRect((node.x ?? 0) - w / 2, (node.y ?? 0) - h / 2, w, h);
-        }}
-        onEngineTick={() => {
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            fgRef.current?.graphData?.nodes?.forEach((node: any) => {
-                const radius = node.__collisionRadius ?? 10;
-                if ((node.x ?? 0) < radius) node.x = radius;
-                if ((node.y ?? 0) < radius) node.y = radius;
-                if ((node.x ?? 0) > width - radius) node.x = width - radius;
-                if ((node.y ?? 0) > height - radius) node.y = height - radius;
-            });
-        }}
-        onEngineStop={() => {
-          const fg = fgRef.current;
-          if (fg) {
-            fg.d3Force(
-              "collision",
-              fg.d3Force("collision") ??
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                forceCollide((node: any) => (node.__collisionRadius ?? 10) + 5).strength(0.3)
-            );
-          }
         }}
       />
     );

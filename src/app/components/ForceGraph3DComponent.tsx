@@ -19,39 +19,25 @@ interface ForceGraph3DComponentProps {
   linkCurvature?: (link: LinkObject) => number;
   linkArrowLength?: (link: LinkObject) => number;
   linkWidth?: (link: LinkObject) => number;
+  nodeLabel?: (node: GraphNode) => string;
   width: number;
   height: number;
 }
 
 const ForceGraph3DComponent = forwardRef<ForceGraph3DComponentRef, ForceGraph3DComponentProps>(
-  (
-    {
-      graphData,
-      onNodeClick,
-      linkColor,
-      linkWidth,
-      linkCurvature,
-      linkArrowLength,
-      width,
-      height,
-    },
-    ref
-  ) => {
+  ({ graphData, onNodeClick, nodeLabel, linkColor, linkWidth, linkCurvature, linkArrowLength, width, height }, ref) => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const fgRef = useRef<any>(null);
 
     useEffect(() => {
       if (!fgRef.current) return;
-      
       const timer = setTimeout(() => {
         fgRef.current?.zoomToFit?.(400, 50);
         fgRef.current?.d3ReheatSimulation?.();
       }, 100);
-
       return () => clearTimeout(timer);
     }, [graphData]);
 
-    // Expose zoomToFit via ref
     useEffect(() => {
       if (ref && "current" in ref) {
         ref.current = {
@@ -60,13 +46,6 @@ const ForceGraph3DComponent = forwardRef<ForceGraph3DComponentRef, ForceGraph3DC
           },
         };
       }
-
-      return () => {
-        if (ref && "current" in ref) {
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            ref.current = null as any;
-        }
-      };
     }, [ref]);
 
     return (
@@ -76,7 +55,7 @@ const ForceGraph3DComponent = forwardRef<ForceGraph3DComponentRef, ForceGraph3DC
         height={height}
         graphData={graphData}
         backgroundColor="#1e293b"
-        nodeLabel="id"
+        nodeLabel={(node: any) => nodeLabel?.(node as GraphNode) ?? node.id} // cast here
         linkLabel="label"
         nodeAutoColorBy="id"
         linkDirectionalArrowLength={linkArrowLength ?? (() => 0)}

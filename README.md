@@ -75,6 +75,8 @@ Clone the frontend repository and install dependencies:
 ```bash
 git clone https://github.com/edgar-demeude/argument-frontend.git
 cd argument-visualisation
+nvm install --lts
+nvm use --lts
 npm install
 npm run dev
 ```
