@@ -17,11 +17,14 @@ export default function Navbar() {
           Argumentation
         </Link>
       </div>
+      <Link href="/aba" className={linkClass("/aba")}>
+        ABA Generator
+      </Link>
       <Link href="/relations" className={linkClass("/relations")}>
         Relation Prediction
       </Link>
-      <Link href="/aba" className={linkClass("/aba")}>
-        ABA Generator
+      <Link href="/gradual" className={linkClass("/gradual")}>
+        Gradual Semantics
       </Link>
     </nav>
   );
