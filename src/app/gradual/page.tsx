@@ -1,10 +1,13 @@
 "use client";
 
 import { useState } from "react";
-import Gradual3D from "./Gradual3D";
+import dynamic from "next/dynamic";
 import GradualPanel from "./gradualPanel";
 import { GradualResult } from "./types";
 import { API_URL } from "../../../config";
+
+// Import the 3D plot dynamically to avoid SSR issues
+const Gradual3D = dynamic(() => import("./Gradual3D"), { ssr: false });
 
 export default function GradualPage() {
   // State for API result and loading
