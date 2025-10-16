@@ -74,7 +74,9 @@ export default function ABAResultsPanel({ results }: ABAResultsPanelProps) {
       </div>
 
       <div className="mb-4">
-        <h3 className="font-semibold">Attacks</h3>
+        <h3 className="font-semibold">
+          {isABAPlus ? "Normal Attacks" : "Attacks"}
+        </h3>
         <ul className="list-disc ml-5">
           {(results.attacks ?? []).map((a, i) => (
             <li key={i}>{formatAttack(a)}</li>
