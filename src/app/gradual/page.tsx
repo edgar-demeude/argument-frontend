@@ -1,70 +1,79 @@
 "use client";
 
-import { useState } from "react";
-import dynamic from "next/dynamic";
+import React, { useState } from "react";
 import GradualPanel from "./gradualPanel";
-import { GradualResult } from "./types";
+import Gradual3D from "./Gradual3D";
+import { GradualInput, GradualOutput } from "./types";
 import { API_URL } from "../../../config";
 
-// Import the 3D plot dynamically to avoid SSR issues
-const Gradual3D = dynamic(() => import("./Gradual3D"), { ssr: false });
 
-export default function GradualPage() {
-  // State for API result and loading
-  const [result, setResult] = useState<GradualResult | null>(null);
-  const [loading, setLoading] = useState(false);
+export default function Page() {
+  const [data, setData] = useState<GradualOutput | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState<boolean>(false);
 
-  // Parameters for gradual semantics computation
-  const [args, setArgs] = useState<string[]>(["A", "B", "C"]);
-  const [relations, setRelations] = useState<[string, string][]>([["A", "B"], ["B", "C"]]);
-  const [nSamples, setNSamples] = useState(500);
-  const [maxIter, setMaxIter] = useState(1000);
-
-  // Handler for API call, using current parameters
-  async function handleCompute() {
+  async function handleCompute(payload: GradualInput) {
     setLoading(true);
+    setError(null);
+    setData(null);
+
     try {
       const res = await fetch(`${API_URL}/gradual`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          A: args,
-          R: relations,
-          n_samples: nSamples,
-          max_iter: maxIter,
-        }),
+        body: JSON.stringify(payload),
       });
-      const data = await res.json();
-      setResult(data);
-    } catch (err) {
-      console.error(err);
+
+      const text = await res.text();
+      if (!res.ok) {
+        throw new Error(`HTTP ${res.status}: ${text}`);
+      }
+
+      const json = JSON.parse(text) as GradualOutput;
+      setData(json);
+    } catch (err: any) {
+      console.error("Error:", err);
+      setError(err?.message || "Request failed");
     } finally {
       setLoading(false);
     }
   }
 
   return (
-    <div className="flex h-screen">
-      {/* Left panel: parameter controls */}
-      <GradualPanel
-        args={args}
-        setArgs={setArgs}
-        relations={relations}
-        setRelations={setRelations}
-        nSamples={nSamples}
-        setNSamples={setNSamples}
-        maxIter={maxIter}
-        setMaxIter={setMaxIter}
-        loading={loading}
-        onCompute={handleCompute}
-      />
-      {/* Right panel: 3D plot */}
-      <div className="flex-1 p-4 bg-gray-900">
-        {result ? (
-          <Gradual3D data={result} />
-        ) : (
-          <p className="text-gray-400 text-center mt-20">No data yet.</p>
+    <div className="flex h-screen bg-[var(--background)] text-[var(--foreground)]">
+      {/* LEFT PANEL */}
+      <div className="w-1/4 bg-gray-800 p-5 overflow-y-auto text-white flex-shrink-0">
+        <GradualPanel onRun={handleCompute} />
+      </div>
+
+      {/* RIGHT PANEL */}
+      <div className="flex-1 p-6 overflow-hidden">
+        {loading && (
+          <div className="text-sm mb-2 opacity-70">Computing results…</div>
         )}
+        {error && (
+          <div className="text-sm text-red-500 mb-2">Error: {error}</div>
+        )}
+        {data && (
+          <div className="text-sm mb-4 opacity-90">
+            <div>
+              <strong>Axes:</strong>{" "}
+              {data.axes && data.axes.length ? data.axes.join(", ") : "—"}
+            </div>
+            <div>
+              <strong>Hull Volume:</strong>{" "}
+              {data.hull_volume?.toFixed(4) ?? "—"}
+            </div>
+            <div>
+              <strong>Hull Area:</strong>{" "}
+              {data.hull_area?.toFixed(4) ?? "—"}
+            </div>
+          </div>
+        )}
+
+        <div className="flex-1 w-full h-full">
+          <Gradual3D data={data} />
+        </div>
       </div>
     </div>
   );
