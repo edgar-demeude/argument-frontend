@@ -56,6 +56,32 @@ export default function ABAResultsPanel({ results }: ABAResultsPanelProps) {
       <h2 className="text-xl font-bold mb-4">ABA{isABAPlus ? "+" : ""} Results</h2>
 
       <div className="mb-4">
+        <h3 className="font-semibold">
+          {isABAPlus ? (
+            <>
+              <span className="text-red-500">Blue Arrows →</span>
+              {" : Reverse Attack"}
+            </>
+          ) : (
+            <>
+              <span className="text-red-500">Red Arrows →</span>
+              {" : Attack"}
+            </>
+          )}
+        </h3>
+        <h3 className="font-semibold">
+          {isABAPlus ? (
+            <>
+              <span className="text-blue-500">Red Arrows →</span>
+              {" : Normal Attack"}
+            </>
+          ) : (
+            ""
+          )}
+        </h3>
+      </div>
+
+      <div className="mb-4">
         <h3 className="font-semibold">Assumptions</h3>
         <ul className="list-disc ml-5">
           {(results.assumptions ?? []).map((a, i) => (

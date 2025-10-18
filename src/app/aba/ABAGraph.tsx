@@ -17,14 +17,20 @@ const ABAGraph3D = forwardRef<GraphWrapperRef, ABAGraph3DProps>(
       graphData={graphData}
       onNodeClick={onNodeClick}
       nodeLabel={(node) => node.text ?? node.id ?? "unknown"}
-      linkColor={(link) => {
-        if (link.label === "attack") return "#f87171"; // red
-        if (link.label === "reverse") return "#60a5fa"; // blue
-        return "#34d399"; // green fallback
+      linkColor={(link) => link.color ?? "#34d399"}
+      linkCurvature={(link) => (link.source === link.target ? 0.5 : 0.2)}
+      linkArrowLength={(link) =>
+        link.label === "Attack" ||
+          link.label === "Normal Attack" ||
+          link.label === "Reverse Attack"
+          ? 6
+          : 0
+      }
+      linkWidth={(link) => {
+        if (link.label === "Reverse Attack") return 0.5;
+        if (link.label === "Attack" || link.label === "Normal Attack") return 1; // standard
+        return 1.5; // fallback
       }}
-      linkCurvature={(link) => link.source === link.target ? 0.5 : 0.2}
-      linkArrowLength={(link) => (link.label === "attack" || link.label === "reverse" ? 6 : 0)}
-      linkWidth={(link) => (link.label === "attack" ? 1 : link.label === "reverse" ? 0.5 : 1.5)}
     />
   )
 );
