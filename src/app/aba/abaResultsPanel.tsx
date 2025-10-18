@@ -55,7 +55,7 @@ export default function ABAResultsPanel({ results }: ABAResultsPanelProps) {
         <h3 className="font-semibold">
           {isABAPlus ? (
             <>
-              <span className="text-red-500">Blue Arrows →</span>
+              <span className="text-blue-500">Blue Arrows →</span>
               {" : Reverse Attack"}
             </>
           ) : (
@@ -68,7 +68,7 @@ export default function ABAResultsPanel({ results }: ABAResultsPanelProps) {
         <h3 className="font-semibold">
           {isABAPlus ? (
             <>
-              <span className="text-blue-500">Red Arrows →</span>
+              <span className="text-red-500">Red Arrows →</span>
               {" : Normal Attack"}
             </>
           ) : (
