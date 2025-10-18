@@ -58,7 +58,6 @@ export default function GradualPanel(props: { onRun: (payload: GradualInput) => 
       const res = await fetch(`${API_URL}/gradual-examples/${name}.json`);
       const data: ExampleContent = await res.json();
 
-      // Determine args/relations shape
       const num = data.num_args ?? data.args?.length ?? 3;
       const rel = data.R ?? data.relations ?? [];
 
@@ -118,12 +117,10 @@ export default function GradualPanel(props: { onRun: (payload: GradualInput) => 
     return true;
   }
 
-  // --- conditional logic ---
   const showAxes = numArgs > 3;
   const axes = showAxes ? [xAxis, yAxis, zAxis] : A.slice(0, Math.min(3, A.length));
   const nonVisualized = A.filter((a) => !axes.includes(a));
 
-  // --- submit ---
   function handleCompute() {
     if (!validateRelations()) return;
 
@@ -140,18 +137,17 @@ export default function GradualPanel(props: { onRun: (payload: GradualInput) => 
     props.onRun(payload);
   }
 
-  // --- render ---
   return (
-    <div className="bg-gray-800 p-5 overflow-y-auto text-white flex-shrink-0">
+    <div className="bg-[var(--surface)] p-5 overflow-y-auto text-[var(--foreground)] flex-shrink-0 space-y-4">
       <h2 className="text-xl font-semibold mb-4">Gradual Semantics</h2>
 
       {/* Example selection */}
-      <div className="p-4 bg-gray-700 rounded-lg shadow-inner mb-2">
-        <label className="block mb-2 font-semibold text-white">Example</label>
+      <div className="p-4 rounded-lg shadow-inner bg-[var(--surface-alt)] border border-[var(--border)]">
+        <label className="block mb-2 font-semibold text-[var(--foreground)]">Example</label>
         <select
           value={selectedExample ?? ""}
           onChange={(e) => loadExample(e.target.value)}
-          className="w-full p-2 rounded-lg bg-gray-800 border border-gray-600 text-white focus:ring-2 focus:ring-green-500 cursor-pointer transition"
+          className="w-full p-2 rounded-lg bg-[var(--surface)] border border-[var(--border)] text-[var(--foreground)] focus:ring-2 focus:ring-[var(--accent)] cursor-pointer transition"
         >
           <option value="">Select example...</option>
           {exampleFiles.map((ex) => (
@@ -163,9 +159,9 @@ export default function GradualPanel(props: { onRun: (payload: GradualInput) => 
       </div>
 
       {/* Number of arguments */}
-      <div className="p-4 bg-gray-700 rounded-lg shadow-inner">
-        <label className="block mb-2 font-semibold text-white">
-          Number of Arguments (|A|): <span className="text-green-400">{numArgs}</span>
+      <div className="p-4 rounded-lg shadow-inner bg-[var(--surface-alt)] border border-[var(--border)]">
+        <label className="block mb-2 font-semibold text-[var(--foreground)]">
+          Number of Arguments (|A|): <span className="text-[var(--accent)]">{numArgs}</span>
         </label>
         <input
           type="range"
@@ -173,14 +169,14 @@ export default function GradualPanel(props: { onRun: (payload: GradualInput) => 
           max={10}
           value={numArgs}
           onChange={(e) => setNumArgs(Number(e.target.value))}
-          className="w-full accent-green-500"
+          className="w-full accent-[var(--accent)]"
         />
       </div>
 
       {/* Number of samples */}
-      <div className="p-4 bg-gray-700 rounded-lg shadow-inner">
-        <label className="block mb-2 font-semibold text-white">
-          Number of Samples: <span className="text-green-400">{nSamples}</span>
+      <div className="p-4 rounded-lg shadow-inner bg-[var(--surface-alt)] border border-[var(--border)]">
+        <label className="block mb-2 font-semibold text-[var(--foreground)]">
+          Number of Samples: <span className="text-[var(--accent)]">{nSamples}</span>
         </label>
         <input
           type="range"
@@ -189,25 +185,25 @@ export default function GradualPanel(props: { onRun: (payload: GradualInput) => 
           step={100}
           value={nSamples}
           onChange={(e) => setNSamples(Number(e.target.value))}
-          className="w-full accent-green-500"
+          className="w-full accent-[var(--accent)]"
         />
       </div>
 
       {/* Relations textbox */}
-      <div className="p-4 bg-gray-700 rounded-lg shadow-inner">
-        <label className="block mb-2 font-semibold text-white">
+      <div className="p-4 rounded-lg shadow-inner bg-[var(--surface-alt)] border border-[var(--border)]">
+        <label className="block mb-2 font-semibold text-[var(--foreground)]">
           Relations R (format: (A,B),(B,C))
         </label>
         <textarea
           value={relations}
           onChange={(e) => setRelations(e.target.value)}
-          className="w-full min-h-[80px] p-2 bg-gray-900 border border-gray-700 rounded-lg text-sm text-gray-300 resize-none focus:outline-none focus:ring-2 focus:ring-green-500"
+          className="w-full min-h-[80px] p-2 bg-[var(--surface)] border border-[var(--border)] rounded-lg text-sm text-[var(--foreground)] resize-none focus:outline-none focus:ring-2 focus:ring-[var(--accent)]"
         />
         {relationError && (
-          <div className="text-red-400 text-sm mt-2">{relationError}</div>
+          <div className="text-red-500 text-sm mt-2">{relationError}</div>
         )}
         {!relationError && (
-          <div className="text-xs text-gray-300 mt-2">
+          <div className="text-xs text-[var(--foreground)] mt-2">
             Parsed:{" "}
             {parsedR.length
               ? parsedR.map(([a, b], i) => <code key={i}>({a},{b}) </code>)
@@ -218,22 +214,18 @@ export default function GradualPanel(props: { onRun: (payload: GradualInput) => 
 
       {/* Conditional axes selection */}
       {showAxes && (
-        <div className="grid grid-cols-3 gap-2 p-4 bg-gray-700 rounded-lg shadow-inner">
-          {[
-            { label: "X", value: xAxis, setter: setXAxis },
+        <div className="grid grid-cols-3 gap-2 p-4 bg-[var(--surface-alt)] rounded-lg shadow-inner border border-[var(--border)]">
+          {[{ label: "X", value: xAxis, setter: setXAxis },
             { label: "Y", value: yAxis, setter: setYAxis },
-            { label: "Z", value: zAxis, setter: setZAxis },
-          ].map(({ label, value, setter }) => (
-            <div key={label} className="p-3 bg-gray-700 rounded-lg shadow-inner">
-              <label className="block mb-2 font-semibold text-white">{label} axis</label>
+            { label: "Z", value: zAxis, setter: setZAxis }].map(({ label, value, setter }) => (
+            <div key={label} className="p-3 bg-[var(--surface-alt)] rounded-lg shadow-inner border border-[var(--border)]">
+              <label className="block mb-2 font-semibold text-[var(--foreground)]">{label} axis</label>
               <select
                 value={value}
                 onChange={(e) => setter(e.target.value)}
-                className="border border-gray-600 rounded-lg px-2 py-2 w-full bg-gray-900 text-white focus:outline-none focus:ring-2 focus:ring-green-500 cursor-pointer transition"
+                className="border border-[var(--border)] rounded-lg px-2 py-2 w-full bg-[var(--surface)] text-[var(--foreground)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)] cursor-pointer transition"
               >
-                {A.map((a) => (
-                  <option key={a}>{a}</option>
-                ))}
+                {A.map((a) => <option key={a}>{a}</option>)}
               </select>
             </div>
           ))}
@@ -242,8 +234,8 @@ export default function GradualPanel(props: { onRun: (payload: GradualInput) => 
 
       {/* Sliders for non-visualized args */}
       {nonVisualized.length > 0 && (
-        <div className="p-4 bg-gray-700 rounded-lg shadow-inner">
-          <div className="text-sm mb-3 font-semibold text-white">Adjust weights for other arguments:</div>
+        <div className="p-4 rounded-lg shadow-inner bg-[var(--surface-alt)] border border-[var(--border)]">
+          <div className="text-sm mb-3 font-semibold text-[var(--foreground)]">Adjust weights for other arguments:</div>
           {nonVisualized.map((arg) => (
             <div key={arg} className="flex items-center gap-3">
               <span className="w-6">{arg}</span>
@@ -259,7 +251,7 @@ export default function GradualPanel(props: { onRun: (payload: GradualInput) => 
                     [arg]: Number(e.target.value),
                   }))
                 }
-                className="w-full accent-green-500"
+                className="w-full accent-[var(--accent)]"
               />
               <span className="w-12 text-right tabular-nums">
                 {(controlledArgs[arg] ?? 0.5).toFixed(2)}
@@ -272,7 +264,7 @@ export default function GradualPanel(props: { onRun: (payload: GradualInput) => 
       {/* Compute button */}
       <button
         onClick={handleCompute}
-        className="w-full px-4 py-2 rounded-lg font-semibold text-white transition-all duration-200 bg-blue-600 hover:bg-blue-700 active:bg-blue-800 cursor-pointer"
+        className="w-full px-4 py-2 rounded-lg font-semibold text-[var(--foreground)] transition-all duration-200 bg-[var(--secondary)] hover:bg-[var(--secondary-hover)] active:opacity-90 cursor-pointer"
       >
         Compute
       </button>

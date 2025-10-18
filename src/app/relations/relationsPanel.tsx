@@ -47,22 +47,22 @@ export default function RelationsPanel({
   const canAddRelation = !!arg1 && !!arg2;
 
   return (
-    <div className="w-1/4 bg-gray-800 p-5 overflow-y-auto text-white flex-shrink-0">
+    <div className="w-1/4 p-5 overflow-y-auto flex-shrink-0 border-r border-[var(--border)] bg-[var(--surface)] text-[var(--foreground)]">
       {/* Mode toggle */}
-      <div className="mb-4 p-3 bg-gray-700 rounded-lg flex items-center justify-between">
+      <div className="mb-4 p-3 rounded-lg flex items-center justify-between border border-[var(--border)] bg-[var(--surface-alt)]">
         <span>{is3D ? "3D Mode" : "2D Mode"}</span>
         <button
           onClick={onToggleMode}
           disabled={loading}
-          className="bg-purple-600 px-3 py-1 rounded hover:bg-purple-500 transition"
+          className="px-3 py-1 rounded bg-[var(--secondary)] hover:bg-[var(--secondary-hover)] transition disabled:opacity-50 disabled:cursor-not-allowed"
         >
           Switch to {is3D ? "2D" : "3D"}
         </button>
       </div>
 
       {/* CSV loader */}
-      <div className="mb-6 p-4 bg-gray-700 rounded-lg shadow-inner">
-        <label className="block text-white font-semibold mb-2">Load CSV</label>
+      <div className="mb-6 p-4 rounded-lg shadow-inner bg-[var(--surface-alt)] border border-[var(--border)]">
+        <label className="block font-semibold mb-2 text-[var(--foreground)]">Load CSV</label>
 
         <input
           type="file"
@@ -73,19 +73,19 @@ export default function RelationsPanel({
         />
         <label
           htmlFor="csvFile"
-          className={`block w-full p-2 text-center rounded-lg cursor-pointer border border-gray-600 bg-gray-800 hover:border-gray-400 transition ${
+          className={`block w-full p-2 text-center rounded-lg cursor-pointer border border-[var(--border)] bg-[var(--surface)] hover:bg-[var(--surface-alt)] transition ${
             loading ? "opacity-50 cursor-not-allowed" : ""
           }`}
         >
           {loading ? "Loading..." : "Upload .csv File"}
         </label>
 
-        <p className="text-center text-gray-400 my-3 text-sm">— or —</p>
+        <p className="text-center text-[var(--muted)] my-3 text-sm">— or —</p>
 
         <select
           value={selectedSample}
           onChange={(e) => setSelectedSample(e.target.value)}
-          className="w-full p-2 rounded-lg bg-gray-800 border border-gray-600 text-white focus:ring-2 focus:ring-green-500 cursor-pointer transition"
+          className="w-full p-2 rounded-lg bg-[var(--surface)] border border-[var(--border)] text-[var(--foreground)] focus:ring-2 focus:ring-[var(--accent)] cursor-pointer transition"
         >
           <option value="">Choose an example</option>
           {samples.map((s) => (
@@ -97,19 +97,22 @@ export default function RelationsPanel({
 
         <button
           onClick={handleLoadCSV}
-          className={`mt-4 w-full p-2 rounded-lg font-semibold text-white transition-all duration-200 ${
-            canLoadCSV
-              ? "bg-green-600 hover:bg-green-700 active:bg-green-800 cursor-pointer"
-              : "bg-green-400 text-gray-200 cursor-not-allowed"
-          }`}
           disabled={!canLoadCSV}
+          className={`mt-4 w-full p-2 rounded-lg font-semibold text-[var(--foreground)] transition-all duration-200 ${
+            canLoadCSV
+              ? "bg-[var(--accent)] hover:bg-[var(--accent-hover)] active:opacity-90 cursor-pointer"
+              : "bg-[var(--accent)] opacity-50 cursor-not-allowed"
+          }`}
         >
           {loading ? "Loading..." : "Load CSV"}
         </button>
 
         {loading && progress > 0 && (
-          <div className="w-full bg-gray-600 h-3 mt-2 rounded">
-            <div className="bg-blue-500 h-3 rounded" style={{ width: `${Math.round(progress * 100)}%` }} />
+          <div className="w-full bg-[var(--border)] h-3 mt-2 rounded">
+            <div
+              className="bg-[var(--secondary)] h-3 rounded"
+              style={{ width: `${Math.round(progress * 100)}%` }}
+            />
           </div>
         )}
       </div>
@@ -120,13 +123,13 @@ export default function RelationsPanel({
           value={arg1}
           onChange={(e) => setArg1(e.target.value)}
           placeholder="Argument 1"
-          className="border border-gray-600 rounded-lg p-2 w-full bg-gray-700 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 transition"
+          className="border border-[var(--border)] rounded-lg p-2 w-full bg-[var(--surface-alt)] text-[var(--foreground)] placeholder-[var(--muted)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)] transition"
         />
         <input
           value={arg2}
           onChange={(e) => setArg2(e.target.value)}
           placeholder="Argument 2"
-          className="border border-gray-600 rounded-lg p-2 w-full bg-gray-700 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 transition"
+          className="border border-[var(--border)] rounded-lg p-2 w-full bg-[var(--surface-alt)] text-[var(--foreground)] placeholder-[var(--muted)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)] transition"
         />
         <button
           onClick={() => {
@@ -134,19 +137,19 @@ export default function RelationsPanel({
             setArg1("");
             setArg2("");
           }}
-          className={`w-full px-4 py-2 rounded-lg font-semibold text-white transition-all duration-200 ${
-            canAddRelation
-              ? "bg-blue-600 hover:bg-blue-700 active:bg-blue-800 cursor-pointer"
-              : "bg-blue-400 text-gray-200 cursor-not-allowed"
-          }`}
           disabled={!canAddRelation}
+          className={`w-full px-4 py-2 rounded-lg font-semibold text-[var(--foreground)] transition-all duration-200 ${
+            canAddRelation
+              ? "bg-[var(--secondary)] hover:bg-[var(--secondary-hover)] active:opacity-90 cursor-pointer"
+              : "bg-[var(--secondary)] opacity-50 cursor-not-allowed"
+          }`}
         >
           Add Relation
         </button>
       </div>
 
       {selectedNode && (
-        <div className="mt-6 p-4 border border-gray-600 rounded-lg bg-gray-700">
+        <div className="mt-6 p-4 border border-[var(--border)] rounded-lg bg-[var(--surface-alt)] text-[var(--foreground)]">
           <p><strong>ID:</strong> {selectedNode.id}</p>
           <p><strong>Text:</strong> {selectedNode.text}</p>
         </div>

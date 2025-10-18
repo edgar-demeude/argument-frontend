@@ -23,36 +23,44 @@ export default function ABAPanel({
 }: ABAPanelProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const { fileContent, setFileContent, exampleFiles, handleFileChange, handleExampleSelect } =
-    useABAFileLoader({ fileInputRef, setSelectedFile });
+  const {
+    fileContent,
+    setFileContent,
+    exampleFiles,
+    handleFileChange,
+    handleExampleSelect,
+  } = useABAFileLoader({ fileInputRef, setSelectedFile });
 
-  // Sync textarea content to selectedFile
   const handleContentChange = (content: string) => {
     setFileContent(content);
-    const tempFile = new File([content], selectedFile?.name || "manual.txt", { type: "text/plain" });
+    const tempFile = new File([content], selectedFile?.name || "manual.txt", {
+      type: "text/plain",
+    });
     setSelectedFile(tempFile);
   };
 
   return (
-    <div className="w-1/4 bg-gray-800 p-5 overflow-y-auto text-white flex-shrink-0">
+    <div className="w-1/4 p-5 overflow-y-auto flex-shrink-0 border-r border-[var(--border)] bg-[var(--surface)] text-[var(--foreground)]">
       {/* Mode toggle */}
-      <div className="mb-4 p-3 bg-gray-700 rounded-lg flex items-center justify-between">
-        <span>{is3D ? "3D Mode" : "2D Mode"}</span>
+      <div className="mb-4 p-3 rounded-xl flex items-center justify-between border border-[var(--border)] bg-[var(--surface-alt)]">
+        <span className="font-medium">{is3D ? "3D Mode" : "2D Mode"}</span>
         <button
           onClick={onToggleMode}
           disabled={loading}
-          className="bg-purple-600 px-3 py-1 rounded hover:bg-purple-500 transition"
+          className="px-3 py-1 rounded-lg bg-[var(--secondary)] hover:bg-[var(--secondary-hover)] transition disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
         >
           Switch to {is3D ? "2D" : "3D"}
         </button>
       </div>
 
       {/* File upload / manual input */}
-      <div className="p-4 bg-gray-700 rounded-lg shadow-inner mb-6">
-        <label className="block text-white font-semibold mb-2">ABA File</label>
+      <div className="p-4 rounded-xl border border-[var(--border)] mb-6 shadow-inner bg-[var(--surface-alt)]">
+        <label className="block text-[var(--foreground)] font-semibold mb-2">
+          ABA File
+        </label>
 
         <label
-          className={`block w-full p-2 text-center rounded-lg cursor-pointer border border-gray-600 bg-gray-800 hover:border-gray-400 transition ${
+          className={`block w-full p-2 text-center rounded-lg cursor-pointer border border-[var(--border)] bg-[var(--surface)] hover:bg-[var(--surface-alt)] transition ${
             loading ? "opacity-50 cursor-not-allowed" : ""
           }`}
         >
@@ -66,10 +74,10 @@ export default function ABAPanel({
           />
         </label>
 
-        <p className="text-center text-gray-400 my-3 text-sm">— or —</p>
+        <p className="text-center text-[var(--muted)] my-3 text-sm">— or —</p>
 
         <select
-          className="w-full p-2 rounded-lg bg-gray-800 border border-gray-600 text-white focus:ring-2 focus:ring-green-500 cursor-pointer transition"
+          className="w-full p-2 rounded-lg bg-[var(--surface)] border border-[var(--border)] text-[var(--foreground)] focus:ring-2 focus:ring-[var(--accent)] cursor-pointer transition"
           onChange={handleExampleSelect}
           defaultValue=""
         >
@@ -81,9 +89,8 @@ export default function ABAPanel({
           ))}
         </select>
 
-        {/* Editable textarea for file content */}
         <textarea
-          className="mt-4 w-full h-40 p-2 bg-gray-900 border border-gray-700 rounded-lg text-sm text-gray-300 resize-none focus:outline-none focus:ring-2 focus:ring-green-500"
+          className="mt-4 w-full h-40 p-2 bg-[var(--surface)] border border-[var(--border)] rounded-lg text-sm text-[var(--foreground)] resize-none focus:outline-none focus:ring-2 focus:ring-[var(--accent)]"
           value={fileContent}
           onChange={(e) => handleContentChange(e.target.value)}
           placeholder="Type or paste ABA content here..."
@@ -95,10 +102,10 @@ export default function ABAPanel({
         <button
           onClick={onGenerateABA}
           disabled={loading || !selectedFile}
-          className={`w-full px-4 py-2 rounded-lg font-semibold text-white transition-all duration-200 ${
+          className={`w-full px-4 py-2 rounded-lg font-semibold text-[var(--foreground)] transition-all duration-200 ${
             loading || !selectedFile
-              ? "bg-green-400 text-gray-200 cursor-not-allowed"
-              : "bg-green-600 hover:bg-green-700 active:bg-green-800 cursor-pointer"
+              ? "bg-[var(--accent)] opacity-50 cursor-not-allowed"
+              : "bg-[var(--accent)] hover:bg-[var(--accent-hover)] active:opacity-90 cursor-pointer"
           }`}
         >
           {loading ? "Generating ABA..." : "Generate ABA"}
@@ -107,10 +114,10 @@ export default function ABAPanel({
         <button
           onClick={onGenerateABAPlus}
           disabled={loading || !selectedFile}
-          className={`w-full px-4 py-2 rounded-lg font-semibold text-white transition-all duration-200 ${
+          className={`w-full px-4 py-2 rounded-lg font-semibold text-[var(--foreground)] transition-all duration-200 ${
             loading || !selectedFile
-              ? "bg-purple-400 text-gray-200 cursor-not-allowed"
-              : "bg-purple-600 hover:bg-purple-700 active:bg-purple-800 cursor-pointer"
+              ? "bg-[var(--secondary)] opacity-50 cursor-not-allowed"
+              : "bg-[var(--secondary)] hover:bg-[var(--secondary-hover)] active:opacity-90 cursor-pointer"
           }`}
         >
           {loading ? "Generating ABA+..." : "Generate ABA+"}

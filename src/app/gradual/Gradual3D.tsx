@@ -24,11 +24,11 @@ export default function Gradual3D({ data }: Props) {
   // Determine effective dimension from payload
   const dim = Math.min(3, Math.max(1, axes.length || data.num_args));
 
-  const theme = {
-    paper_bgcolor: "var(--background)",
-    plot_bgcolor: "var(--background)",
-    font: { color: "var(--foreground)" },
-  };
+  // const theme = {
+  //   paper_bgcolor: "var(--background)",
+  //   plot_bgcolor: "var(--background)",
+  //   font: { color: "var(--foreground)" },
+  // };
 
   // ----- 1D -----
   if (dim === 1) {
@@ -57,20 +57,23 @@ export default function Gradual3D({ data }: Props) {
           },
         ]}
         layout={{
-          ...theme,
-          height: 520,
-          margin: { t: 60, r: 20, b: 50, l: 55 },
+          // ...theme,
+          // height: 520,
+          // margin: { t: 60, r: 20, b: 50, l: 55 },
           title: {
             text: `1D Convex Hull (${axes[0] ?? "A"})`,
           },
           xaxis: {
             title: { text: axes[0] ?? "A" },
-            color: "var(--foreground)",
+            // color: "var(--foreground)",
           },
           yaxis: { visible: false },
+          paper_bgcolor: "#111",
+          plot_bgcolor: "#111",
+          font: { color: "#fff" },
           showlegend: true,
         }}
-        style={{ width: "100%" }}
+        style={{ width: "100%", height: "100%" }}
       />
     );
   }
@@ -108,26 +111,29 @@ export default function Gradual3D({ data }: Props) {
                 },
               ]
               : []),
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           ] as any
         }
         layout={{
-          ...theme,
-          height: 700,
-          margin: { t: 60, r: 20, b: 50, l: 55 },
+          // ...theme,
+          // margin: { t: 60, r: 20, b: 50, l: 55 },
           title: {
             text: `2D Projection (${axes[0] ?? "A"}, ${axes[1] ?? "B"})`,
           },
           xaxis: {
             title: { text: axes[0] ?? "A" },
-            color: "var(--foreground)",
+            // color: "var(--foreground)",
           },
           yaxis: {
             title: { text: axes[1] ?? "B" },
-            color: "var(--foreground)",
+            // color: "var(--foreground)",
           },
+          paper_bgcolor: "#111",
+          plot_bgcolor: "#111",
+          font: { color: "#fff" },
           showlegend: true,
         }}
-        style={{ width: "100%" }}
+        style={{ width: "100%", height: "100%" }}
       />
     );
   }
@@ -141,6 +147,7 @@ export default function Gradual3D({ data }: Props) {
   const hy = hullPts.map((p) => p[1]);
   const hz = hullPts.map((p) => p[2]);
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const traces: any[] = [
     {
       x,
@@ -169,9 +176,9 @@ export default function Gradual3D({ data }: Props) {
     <Plot
       data={traces}
       layout={{
-        ...theme,
-        height: 800,
-        margin: { t: 60, r: 20, b: 50, l: 55 },
+        // ...theme,
+        // height: 800,
+        // margin: { t: 60, r: 20, b: 50, l: 55 },
         title: {
           text: `3D Projection (${axes[0] ?? "A"}, ${axes[1] ?? "B"}, ${axes[2] ?? "C"
             })`,
@@ -179,27 +186,30 @@ export default function Gradual3D({ data }: Props) {
         scene: {
           xaxis: {
             title: { text: axes[0] ?? "A" },
-            backgroundcolor: "var(--background)",
-            color: "var(--foreground)",
-            gridcolor: "rgba(127,127,127,0.4)",
+            // backgroundcolor: "var(--background)",
+            // color: "var(--foreground)",
+            // gridcolor: "rgba(127,127,127,0.4)",
           },
           yaxis: {
             title: { text: axes[1] ?? "B" },
-            backgroundcolor: "var(--background)",
-            color: "var(--foreground)",
-            gridcolor: "rgba(127,127,127,0.4)",
+            // backgroundcolor: "var(--background)",
+            // color: "var(--foreground)",
+            // gridcolor: "rgba(127,127,127,0.4)",
           },
           zaxis: {
             title: { text: axes[2] ?? "C" },
-            backgroundcolor: "var(--background)",
-            color: "var(--foreground)",
-            gridcolor: "rgba(127,127,127,0.4)",
+            // backgroundcolor: "var(--background)",
+            // color: "var(--foreground)",
+            // gridcolor: "rgba(127,127,127,0.4)",
           },
-          bgcolor: "var(--background)",
+          // bgcolor: "var(--background)",
         },
+        paper_bgcolor: "#111",
+        plot_bgcolor: "#111",
+        font: { color: "#fff" },
         showlegend: true,
       }}
-      style={{ width: "100%" }}
+      style={{ width: "100%", height: "100%" }}
     />
   );
 }
