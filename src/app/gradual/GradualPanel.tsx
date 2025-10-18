@@ -15,7 +15,13 @@ type ExampleContent = {
   relations?: [string, string][];
 };
 
-export default function GradualPanel(props: { onRun: (payload: GradualInput) => void }) {
+export default function GradualPanel(props: {
+  onRun: (payload: GradualInput) => void;
+  showHull: boolean;
+  setShowHull: (val: boolean) => void;
+}) {
+  const { onRun, showHull, setShowHull } = props;
+
   // --- examples ---
   const [exampleFiles, setExampleFiles] = useState<ExampleMeta[]>([]);
   const [selectedExample, setSelectedExample] = useState<string | null>(null);
@@ -138,12 +144,14 @@ export default function GradualPanel(props: { onRun: (payload: GradualInput) => 
   }
 
   return (
-    <div className="bg-[var(--surface)] p-5 overflow-y-auto text-[var(--foreground)] flex-shrink-0 space-y-4">
-      <h2 className="text-xl font-semibold mb-4">Gradual Semantics</h2>
+    <div className="w-1/4 p-5 overflow-y-auto flex-shrink-0 border-l border-[var(--border)] bg-[var(--background)] text-[var(--foreground)] border-r border-[color-mix(in_oklab,var(--foreground)_20%,transparent)]">
+      <h2 className="text-lg font-semibold mb-4">Gradual Semantics</h2>
 
       {/* Example selection */}
-      <div className="p-4 rounded-lg shadow-inner bg-[var(--surface-alt)] border border-[var(--border)]">
-        <label className="block mb-2 font-semibold text-[var(--foreground)]">Example</label>
+      <div className="p-4 rounded-xl border border-[var(--border)] mb-6 shadow-inner bg-[var(--surface-alt)]">
+        <label className="block mb-2 font-semibold text-[var(--foreground)]">
+          Example
+        </label>
         <select
           value={selectedExample ?? ""}
           onChange={(e) => loadExample(e.target.value)}
@@ -159,8 +167,8 @@ export default function GradualPanel(props: { onRun: (payload: GradualInput) => 
       </div>
 
       {/* Number of arguments */}
-      <div className="p-4 rounded-lg shadow-inner bg-[var(--surface-alt)] border border-[var(--border)]">
-        <label className="block mb-2 font-semibold text-[var(--foreground)]">
+      <div className="p-4 rounded-xl border border-[var(--border)] mb-4 shadow-inner bg-[var(--surface-alt)]">
+        <label className="block mb-3 font-semibold text-[var(--foreground)]">
           Number of Arguments (|A|): <span className="text-[var(--accent)]">{numArgs}</span>
         </label>
         <input
@@ -168,14 +176,14 @@ export default function GradualPanel(props: { onRun: (payload: GradualInput) => 
           min={1}
           max={10}
           value={numArgs}
+          className="w-full accent-[var(--accent)] cursor-pointer"
           onChange={(e) => setNumArgs(Number(e.target.value))}
-          className="w-full accent-[var(--accent)]"
         />
       </div>
 
       {/* Number of samples */}
-      <div className="p-4 rounded-lg shadow-inner bg-[var(--surface-alt)] border border-[var(--border)]">
-        <label className="block mb-2 font-semibold text-[var(--foreground)]">
+      <div className="p-4 rounded-xl border border-[var(--border)] mb-4 shadow-inner bg-[var(--surface-alt)]">
+        <label className="block mb-3 font-semibold text-[var(--foreground)]">
           Number of Samples: <span className="text-[var(--accent)]">{nSamples}</span>
         </label>
         <input
@@ -184,13 +192,13 @@ export default function GradualPanel(props: { onRun: (payload: GradualInput) => 
           max={100000}
           step={100}
           value={nSamples}
+          className="w-full accent-[var(--accent)] cursor-pointer"
           onChange={(e) => setNSamples(Number(e.target.value))}
-          className="w-full accent-[var(--accent)]"
         />
       </div>
 
       {/* Relations textbox */}
-      <div className="p-4 rounded-lg shadow-inner bg-[var(--surface-alt)] border border-[var(--border)]">
+      <div className="p-4 rounded-xl border border-[var(--border)] mb-4 shadow-inner bg-[var(--surface-alt)]">
         <label className="block mb-2 font-semibold text-[var(--foreground)]">
           Relations R (format: (A,B),(B,C))
         </label>
@@ -214,16 +222,16 @@ export default function GradualPanel(props: { onRun: (payload: GradualInput) => 
 
       {/* Conditional axes selection */}
       {showAxes && (
-        <div className="grid grid-cols-3 gap-2 p-4 bg-[var(--surface-alt)] rounded-lg shadow-inner border border-[var(--border)]">
+        <div className="grid grid-cols-3 gap-2 p-4 bg-[var(--surface-alt)] rounded-xl shadow-inner border border-[var(--border)] mb-4">
           {[{ label: "X", value: xAxis, setter: setXAxis },
             { label: "Y", value: yAxis, setter: setYAxis },
             { label: "Z", value: zAxis, setter: setZAxis }].map(({ label, value, setter }) => (
-            <div key={label} className="p-3 bg-[var(--surface-alt)] rounded-lg shadow-inner border border-[var(--border)]">
-              <label className="block mb-2 font-semibold text-[var(--foreground)]">{label} axis</label>
+            <div key={label}>
+              <label className="block mb-2 font-semibold text-[var(--foreground)] text-sm">{label} axis</label>
               <select
                 value={value}
                 onChange={(e) => setter(e.target.value)}
-                className="border border-[var(--border)] rounded-lg px-2 py-2 w-full bg-[var(--surface)] text-[var(--foreground)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)] cursor-pointer transition"
+                className="w-full border border-[var(--border)] rounded-lg px-2 py-1 bg-[var(--surface)] text-[var(--foreground)] text-sm focus:outline-none focus:ring-2 focus:ring-[var(--accent)] cursor-pointer transition"
               >
                 {A.map((a) => <option key={a}>{a}</option>)}
               </select>
@@ -234,32 +242,51 @@ export default function GradualPanel(props: { onRun: (payload: GradualInput) => 
 
       {/* Sliders for non-visualized args */}
       {nonVisualized.length > 0 && (
-        <div className="p-4 rounded-lg shadow-inner bg-[var(--surface-alt)] border border-[var(--border)]">
-          <div className="text-sm mb-3 font-semibold text-[var(--foreground)]">Adjust weights for other arguments:</div>
-          {nonVisualized.map((arg) => (
-            <div key={arg} className="flex items-center gap-3">
-              <span className="w-6">{arg}</span>
-              <input
-                type="range"
-                min={0}
-                max={1}
-                step={0.01}
-                value={controlledArgs[arg] ?? 0.5}
-                onChange={(e) =>
-                  setControlledArgs((prev) => ({
-                    ...prev,
-                    [arg]: Number(e.target.value),
-                  }))
-                }
-                className="w-full accent-[var(--accent)]"
-              />
-              <span className="w-12 text-right tabular-nums">
-                {(controlledArgs[arg] ?? 0.5).toFixed(2)}
-              </span>
-            </div>
-          ))}
+        <div className="p-4 rounded-xl border border-[var(--border)] mb-6 shadow-inner bg-[var(--surface-alt)]">
+          <div className="block mb-2 font-semibold text-[var(--foreground)]">
+            Adjust weights for other arguments:
+          </div>
+          <div className="space-y-2">
+            {nonVisualized.map((arg) => (
+              <div key={arg} className="flex items-center gap-3">
+                <span className="w-6 font-semibold">{arg}</span>
+                <input
+                  type="range"
+                  min={0}
+                  max={1}
+                  step={0.01}
+                  value={controlledArgs[arg] ?? 0.5}
+                  onChange={(e) =>
+                    setControlledArgs((prev) => ({
+                      ...prev,
+                      [arg]: Number(e.target.value),
+                    }))
+                  }
+                  className="w-full accent-[var(--accent)] cursor-pointer"
+                />
+                <span className="w-12 text-right tabular-nums text-sm">
+                  {(controlledArgs[arg] ?? 0.5).toFixed(2)}
+                </span>
+              </div>
+            ))}
+          </div>
         </div>
       )}
+
+      {/* Toggle mesh hull */}
+      <div className="p-4 mb-4 flex justify-between items-center rounded-xl border border-[var(--border)] bg-[var(--surface-alt)] shadow-inner">
+        <span className="font-semibold text-[var(--foreground)]">Show 3D Hull Mesh</span>
+        <button
+          onClick={() => setShowHull(!showHull)}
+          className={`px-3 py-1 rounded-lg font-medium transition-all duration-150 cursor-pointer border
+            ${showHull
+              ? "bg-[var(--accent)] text-white border-transparent"
+              : "bg-[var(--surface)] text-[var(--foreground)] border-[var(--border)]"
+            }`}
+        >
+          {showHull ? "ON" : "OFF"}
+        </button>
+      </div>
 
       {/* Compute button */}
       <button

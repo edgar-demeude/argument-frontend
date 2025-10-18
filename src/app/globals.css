@@ -1,12 +1,15 @@
 @import "tailwindcss";
 
 :root {
-  --background: #0E1117;
+  --background: #0c121f;
+  --background-darker: #0E1117;
   --surface: #1B2230;
   --surface-alt: #242B38;
   --border: #2E3545;
   --accent: #16A34A;
   --accent-hover: #22C55E;
+  --attack-red: #f87171;
+  --reverse-blue: #60a5fa;
   --secondary: #7C3AED;
   --secondary-hover: #8B5CF6;
   --foreground: #EDEDED;
@@ -17,7 +20,15 @@ body {
   background-color: var(--background);
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
+  height: 100%;
+  margin: 0;
 }
+
+html {
+  height: 100%;
+  margin: 0;
+}
+
 
 .flex-1.h-full {
   min-width: 0;

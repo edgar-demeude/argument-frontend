@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { API_URL } from "../../../../config";
 import { GraphData, GraphNode } from "../../components/types";
 import { createNode } from "./utils";
@@ -12,13 +12,23 @@ interface CSVResult {
 
 export function useCSVLoader(
   setGraphData: React.Dispatch<React.SetStateAction<GraphData>>,
-  setOriginalGraphData: React.Dispatch<React.SetStateAction<GraphData | null>>
+  setOriginalGraphData: React.Dispatch<React.SetStateAction<GraphData | null>>,
+  setLoadingCSV?: React.Dispatch<React.SetStateAction<boolean>>
 ) {
   const [loading, setLoading] = useState(false);
   const [progress, setProgress] = useState(0);
   const [samples, setSamples] = useState<string[]>([]);
   const [selectedSample, setSelectedSample] = useState<string>("");
   const [customFile, setCustomFile] = useState<File | null>(null);
+
+  // Log loading state
+  useEffect(() => {
+    if (loading) {
+      console.log("CSV is loading…");
+    } else {
+      console.log("CSV finished loading");
+    }
+  }, [loading]);
 
   async function fetchSamples() {
     try {
@@ -37,6 +47,7 @@ export function useCSVLoader(
     }
 
     setLoading(true);
+    setLoadingCSV?.(true); // notify parent
     setProgress(0);
 
     const formData = new FormData();
@@ -96,6 +107,7 @@ export function useCSVLoader(
       alert("Failed to load CSV.");
     } finally {
       setLoading(false);
+      setLoadingCSV?.(false); // notify parent
       setProgress(0);
       setCustomFile(null);
       setSelectedSample("");

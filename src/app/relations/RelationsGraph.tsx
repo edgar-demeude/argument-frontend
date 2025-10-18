@@ -8,6 +8,7 @@ interface RelationsGraphProps {
   graphData: GraphData;
   onNodeClick: (node: GraphNode) => void;
   is3D: boolean;
+  loading?: boolean;
 }
 
 const RelationsGraph = forwardRef<GraphWrapperRef, RelationsGraphProps>(

@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
-import ABAPanel from "./abaPanel";
-import ABAResultsPanel from "./abaResultsPanel";
+import ABAPanel from "./AbaPanel";
+import ABAResultsPanel from "./AbaResultsPanel";
 import ABAGraph3D from "./ABAGraph";
 import { GraphData, GraphLink, GraphNode, ABAApiResponse } from "../components/types";
 import { GraphWrapperRef } from "../components/GraphWrapper";
@@ -134,7 +134,7 @@ export default function ABAPage() {
   const handleGenerateABAPlus = () => uploadFileAndGenerate("aba-plus-upload");
 
   return (
-    <div className="flex h-screen">
+    <div className="flex h-screen" style={{ height: "calc(100vh - 64px)" }}>
       <ABAPanel
         selectedFile={selectedFile}
         setSelectedFile={setSelectedFile}

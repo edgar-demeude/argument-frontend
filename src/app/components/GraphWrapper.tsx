@@ -21,6 +21,7 @@ interface GraphWrapperProps {
   linkArrowLength?: (link: LinkObject) => number;
   linkWidth?: (link: LinkObject) => number;
   nodeLabel?: (node: GraphNode) => string;
+  loading?: boolean;
 }
 
 interface Dimensions {
@@ -39,6 +40,7 @@ const GraphWrapper = forwardRef<GraphWrapperRef, GraphWrapperProps>(
       linkCurvature,
       linkArrowLength,
       nodeLabel,
+      loading
     },
     ref
   ) => {
@@ -103,34 +105,65 @@ const GraphWrapper = forwardRef<GraphWrapperRef, GraphWrapperProps>(
       );
     }
 
+    // inside GraphWrapper return
     return (
-      <div ref={containerRef} className="w-full h-full">
-        {is3D ? (
-          <ForceGraph3DComponent
-            key="force-graph-3d"
-            ref={graph3DRef}
-            graphData={graphData}
-            onNodeClick={onNodeClick}
-            linkColor={linkColor}
-            linkCurvature={linkCurvature}
-            linkArrowLength={linkArrowLength}
-            linkWidth={linkWidth}
-            nodeLabel={nodeLabel}
-            width={dimensions.width}
-            height={dimensions.height}
-          />
-        ) : (
-          <ForceGraph2DComponent
-            key="force-graph-2d"
-            ref={graph2DRef}
-            graphData={graphData}
-            linkColor={linkColor}
-            onNodeClick={onNodeClick}
-            nodeLabel={nodeLabel}
-            width={dimensions.width}
-            height={dimensions.height}
-          />
+      <div ref={containerRef} className="w-full h-full relative">
+        {/* --- Loading overlay when loading --- */}
+        {loading && (
+          <div className="absolute inset-0 flex flex-col items-center justify-center z-10 bg-[color-mix(in_oklab,var(--background)_85%,transparent)] backdrop-blur-sm">
+            <div className="relative w-14 h-14">
+              <div className="absolute top-0 left-0 w-full h-full rounded-full border-4 border-t-transparent border-blue-500 animate-spin"></div>
+              <div className="absolute top-0 left-0 w-full h-full rounded-full border-4 border-transparent border-l-blue-400 animate-[spin_1.2s_linear_infinite_reverse]"></div>
+            </div>
+            <p className="mt-6 text-lg font-medium text-gray-500 animate-pulse">
+              Loading graph data…
+            </p>
+          </div>
         )}
+
+        {/* --- 3D / 2D graph --- */}
+        {graphData && graphData.nodes?.length && aframeLoaded && (
+          is3D ? (
+            <ForceGraph3DComponent
+              key="force-graph-3d"
+              ref={graph3DRef}
+              graphData={graphData}
+              onNodeClick={onNodeClick}
+              linkColor={linkColor}
+              linkCurvature={linkCurvature}
+              linkArrowLength={linkArrowLength}
+              linkWidth={linkWidth}
+              nodeLabel={nodeLabel}
+              width={dimensions.width}
+              height={dimensions.height}
+            />
+          ) : (
+            <ForceGraph2DComponent
+              key="force-graph-2d"
+              ref={graph2DRef}
+              graphData={graphData}
+              linkColor={linkColor}
+              onNodeClick={onNodeClick}
+              nodeLabel={nodeLabel}
+              width={dimensions.width}
+              height={dimensions.height}
+            />
+          )
+        )}
+
+        {/* --- No data placeholder (behind overlay) --- */}
+        {!graphData || !graphData.nodes?.length ? (
+          <div className="flex items-center justify-center w-full h-full">
+            <div className="flex flex-col items-center text-center gap-2">
+              <div className="text-xl font-semibold text-[var(--accent)] animate-pulse">
+                No data yet
+              </div>
+              <div className="text-sm text-[color-mix(in_oklab,var(--foreground)_80%,transparent)]">
+                Upload or generate a dataset to visualize it here.
+              </div>
+            </div>
+          </div>
+        ) : null}
       </div>
     );
   }

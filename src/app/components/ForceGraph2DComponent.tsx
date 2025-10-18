@@ -28,6 +28,10 @@ const ForceGraph2DComponent = forwardRef<ForceGraph2DComponentRef, ForceGraph2DC
     const fgRef = useRef<any>(null);
     const [mounted, setMounted] = useState(false);
 
+    // Get color from CSS
+    const rootStyle = typeof window !== "undefined" ? getComputedStyle(document.documentElement) : null;
+    const background = (rootStyle?.getPropertyValue("--background") || "#111").trim();
+
     useEffect(() => {
       setMounted(true);
     }, []);
@@ -71,7 +75,7 @@ const ForceGraph2DComponent = forwardRef<ForceGraph2DComponentRef, ForceGraph2DC
         graphData={graphData}
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         nodeLabel={(node: any) => nodeLabel?.(node as GraphNode) ?? node.id}
-        backgroundColor="#1e293b"
+        backgroundColor={background}
         onNodeClick={(node) => onNodeClick(node as GraphNode)}
         linkDirectionalArrowLength={35}
         linkDirectionalArrowRelPos={0.95}

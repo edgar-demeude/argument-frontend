@@ -12,6 +12,7 @@ interface RelationsPanelProps {
   is3D: boolean;
   onToggleMode: () => void;
   setOriginalGraphData: React.Dispatch<React.SetStateAction<GraphData | null>>;
+  setLoadingCSV?: React.Dispatch<React.SetStateAction<boolean>>;
 }
 
 export default function RelationsPanel({
@@ -23,6 +24,7 @@ export default function RelationsPanel({
   is3D,
   onToggleMode,
   setOriginalGraphData,
+  setLoadingCSV
 }: RelationsPanelProps) {
   const [arg1, setArg1] = useState("");
   const [arg2, setArg2] = useState("");
@@ -37,7 +39,7 @@ export default function RelationsPanel({
     setCustomFile,
     handleLoadCSV,
     fetchSamples,
-  } = useCSVLoader(setGraphData, setOriginalGraphData);
+  } = useCSVLoader(setGraphData, setOriginalGraphData, setLoadingCSV);
 
   useEffect(() => {
     fetchSamples();
@@ -47,7 +49,7 @@ export default function RelationsPanel({
   const canAddRelation = !!arg1 && !!arg2;
 
   return (
-    <div className="w-1/4 p-5 overflow-y-auto flex-shrink-0 border-r border-[var(--border)] bg-[var(--surface)] text-[var(--foreground)]">
+    <div className="w-1/4 p-5 overflow-y-auto flex-shrink-0 border-r border-[var(--border)] bg-[var(--background)] text-[var(--foreground)] border-r border-[color-mix(in_oklab,var(--foreground)_20%,transparent)]">
       {/* Mode toggle */}
       <div className="mb-4 p-3 rounded-lg flex items-center justify-between border border-[var(--border)] bg-[var(--surface-alt)]">
         <span>{is3D ? "3D Mode" : "2D Mode"}</span>
