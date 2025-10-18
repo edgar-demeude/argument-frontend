@@ -12,6 +12,8 @@ export default function RelationsPage() {
   const [originalGraphData, setOriginalGraphData] = useState<GraphData | null>(null);
   const [selectedNode, setSelectedNode] = useState<GraphNode | null>(null);
   const [is3D, setIs3D] = useState(true);
+  const [loading, setLoading] = useState(false);
+  const [loadingCSV, setLoadingCSV] = useState(false);
 
   const graphRef = useRef<GraphWrapperRef>(null);
 
@@ -47,6 +49,14 @@ export default function RelationsPage() {
     };
   }, []);
 
+  useEffect(() => {
+    if (loading) {
+      console.log("Graph is loading…");
+    } else {
+      console.log("Graph finished loading");
+    }
+  }, [loading]);
+
   /** Toggle between 2D and 3D mode */
   const handleToggleMode = () => {
     setIs3D(prev => !prev);
@@ -57,6 +67,8 @@ export default function RelationsPage() {
   /** Add relation between two arguments */
   const handleAddRelation = async (arg1: string, arg2: string) => {
     if (!arg1 || !arg2) return;
+
+    setLoading(true); // start loading
 
     try {
       const res = await fetch(`${API_URL}/predict-text`, {
@@ -87,6 +99,8 @@ export default function RelationsPage() {
       setOriginalGraphData(prev => (prev ? updateGraph(prev) : updateGraph(graphData)));
     } catch (err) {
       console.error("Error adding relation:", err);
+    } finally {
+      setLoading(false); // stop loading
     }
   };
 
@@ -101,6 +115,7 @@ export default function RelationsPage() {
         is3D={is3D}
         onToggleMode={handleToggleMode}
         setOriginalGraphData={setOriginalGraphData}
+        setLoadingCSV={setLoadingCSV}
       />
 
       <div className="flex-1 h-full min-w-0 overflow-hidden relative">
@@ -109,6 +124,7 @@ export default function RelationsPage() {
           graphData={graphData}
           onNodeClick={setSelectedNode}
           is3D={is3D}
+          loading={loading}
         />
       </div>
 

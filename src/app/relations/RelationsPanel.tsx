@@ -12,6 +12,7 @@ interface RelationsPanelProps {
   is3D: boolean;
   onToggleMode: () => void;
   setOriginalGraphData: React.Dispatch<React.SetStateAction<GraphData | null>>;
+  setLoadingCSV?: React.Dispatch<React.SetStateAction<boolean>>;
 }
 
 export default function RelationsPanel({
@@ -23,6 +24,7 @@ export default function RelationsPanel({
   is3D,
   onToggleMode,
   setOriginalGraphData,
+  setLoadingCSV
 }: RelationsPanelProps) {
   const [arg1, setArg1] = useState("");
   const [arg2, setArg2] = useState("");
@@ -37,7 +39,7 @@ export default function RelationsPanel({
     setCustomFile,
     handleLoadCSV,
     fetchSamples,
-  } = useCSVLoader(setGraphData, setOriginalGraphData);
+  } = useCSVLoader(setGraphData, setOriginalGraphData, setLoadingCSV);
 
   useEffect(() => {
     fetchSamples();
