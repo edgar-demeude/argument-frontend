@@ -6,7 +6,6 @@ import Gradual3D from "./Gradual3D";
 import { GradualInput, GradualOutput } from "./types";
 import { API_URL } from "../../../config";
 
-
 export default function Page() {
   const [data, setData] = useState<GradualOutput | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -31,6 +30,7 @@ export default function Page() {
 
       const json = JSON.parse(text) as GradualOutput;
       setData(json);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (err: any) {
       console.error("Error:", err);
       setError(err?.message || "Request failed");
@@ -42,12 +42,12 @@ export default function Page() {
   return (
     <div className="flex h-screen bg-[var(--background)] text-[var(--foreground)]">
       {/* LEFT PANEL */}
-      <div className="w-1/4 bg-gray-800 p-5 overflow-y-auto text-white flex-shrink-0">
+      <div className="w-1/4 bg-[var(--surface)] p-5 overflow-y-auto border-r border-[var(--border)]">
         <GradualPanel onRun={handleCompute} />
       </div>
 
       {/* RIGHT PANEL */}
-      <div className="flex-1 p-6 overflow-hidden">
+      <div className="flex-1 flex flex-col p-6 overflow-hidden">
         {loading && (
           <div className="text-sm mb-2 opacity-70">Computing results…</div>
         )}
@@ -55,7 +55,7 @@ export default function Page() {
           <div className="text-sm text-red-500 mb-2">Error: {error}</div>
         )}
         {data && (
-          <div className="text-sm mb-4 opacity-90">
+          <div className="text-sm mb-4 opacity-90 flex flex-wrap gap-x-6 gap-y-1">
             <div>
               <strong>Axes:</strong>{" "}
               {data.axes && data.axes.length ? data.axes.join(", ") : "—"}
@@ -71,7 +71,8 @@ export default function Page() {
           </div>
         )}
 
-        <div className="flex-1 w-full h-full">
+        {/* 3D VIEW */}
+        <div className="flex-1 w-full h-full rounded-lg overflow-hidden bg-[var(--surface-alt)] shadow-inner border border-[var(--border)]">
           <Gradual3D data={data} />
         </div>
       </div>
