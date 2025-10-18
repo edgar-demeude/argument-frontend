@@ -59,13 +59,14 @@ export default function ABAPage() {
 
     const links: GraphLink[] = (data.attacks ?? []).map(att => {
       const [source, target] = att.split("→").map(p => p.trim());
-      return { source: cleanLabel(source), target: cleanLabel(target), label: "attack" };
+      return { source: cleanLabel(source), target: cleanLabel(target), label: isABAPlus ? "Normal Attack" : "Attack", color: isABAPlus ? "#f87171" : "#f87171" };
     });
 
     const reverseLinks: GraphLink[] = (data.reverse_attacks ?? []).map((_, i) => ({
       source: nodes[i % nodes.length]?.id ?? `node-${i}`,
       target: nodes[(i + 1) % nodes.length]?.id ?? `node-${i + 1}`,
-      label: "reverse",
+      label: isABAPlus ? "Reverse Attack" : "",
+      color: "#60a5fa",
       dashed: true,
     }));
 
@@ -85,7 +86,7 @@ export default function ABAPage() {
     if (graphData.nodes.length > 0) zoomGraph(150);
   }, [graphData]);
 
-    useEffect(() => {
+  useEffect(() => {
     const resize = () => {
       window.dispatchEvent(new Event("resize"));
       graphRef.current?.zoomToFit?.(400, 50);
