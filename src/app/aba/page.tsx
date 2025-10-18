@@ -134,7 +134,7 @@ export default function ABAPage() {
   const handleGenerateABAPlus = () => uploadFileAndGenerate("aba-plus-upload");
 
   return (
-    <div className="flex h-screen">
+    <div className="flex h-screen" style={{ height: "calc(100vh - 64px)" }}>
       <ABAPanel
         selectedFile={selectedFile}
         setSelectedFile={setSelectedFile}
