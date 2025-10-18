@@ -105,7 +105,18 @@ const GraphWrapper = forwardRef<GraphWrapperRef, GraphWrapperProps>(
 
     return (
       <div ref={containerRef} className="w-full h-full">
-        {is3D ? (
+        {!graphData || !graphData.nodes?.length ? (
+          <div className="flex items-center justify-center w-full h-full">
+            <div className="flex flex-col items-center text-center gap-2">
+              <div className="text-xl font-semibold text-[var(--accent)] animate-pulse">
+                No data yet
+              </div>
+              <div className="text-sm text-[color-mix(in_oklab,var(--foreground)_80%,transparent)]">
+                Upload or generate a dataset to visualize it here.
+              </div>
+            </div>
+          </div>
+        ) : is3D ? (
           <ForceGraph3DComponent
             key="force-graph-3d"
             ref={graph3DRef}

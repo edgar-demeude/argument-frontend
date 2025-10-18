@@ -1,10 +1,11 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
-import RelationsPanel from "./relationsPanel";
+import RelationsPanel from "./RelationsPanel";
 import RelationsGraph from "./RelationsGraph";
 import { GraphWrapperRef } from "../components/GraphWrapper";
 import { GraphData, GraphNode } from "../components/types";
 import { API_URL } from "../../../config";
+import RelationsResultsPanel from "./RelationsResultsPanel";
 
 export default function RelationsPage() {
   const [graphData, setGraphData] = useState<GraphData>({ nodes: [], links: [] });
@@ -110,6 +111,8 @@ export default function RelationsPage() {
           is3D={is3D}
         />
       </div>
+
+      <RelationsResultsPanel graphData={graphData} />
     </div>
   );
 }

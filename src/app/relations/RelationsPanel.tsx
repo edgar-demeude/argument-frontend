@@ -47,7 +47,7 @@ export default function RelationsPanel({
   const canAddRelation = !!arg1 && !!arg2;
 
   return (
-    <div className="w-1/4 p-5 overflow-y-auto flex-shrink-0 border-r border-[var(--border)] bg-[var(--surface)] text-[var(--foreground)]">
+    <div className="w-1/4 p-5 overflow-y-auto flex-shrink-0 border-r border-[var(--border)] bg-[var(--background)] text-[var(--foreground)] border-r border-[color-mix(in_oklab,var(--foreground)_20%,transparent)]">
       {/* Mode toggle */}
       <div className="mb-4 p-3 rounded-lg flex items-center justify-between border border-[var(--border)] bg-[var(--surface-alt)]">
         <span>{is3D ? "3D Mode" : "2D Mode"}</span>

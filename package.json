@@ -28,6 +28,7 @@
     "@types/d3": "^7.4.3",
     "@types/d3-force": "^3.0.10",
     "@types/node": "^20",
+    "@types/plotly.js": "^3.0.7",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "@types/react-plotly.js": "^2.6.3",

@@ -29,6 +29,10 @@ const ForceGraph3DComponent = forwardRef<ForceGraph3DComponentRef, ForceGraph3DC
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const fgRef = useRef<any>(null);
 
+    // Get color from CSS
+    const rootStyle = typeof window !== "undefined" ? getComputedStyle(document.documentElement) : null;
+    const background = (rootStyle?.getPropertyValue("--background") || "#111").trim();
+
     useEffect(() => {
       if (!fgRef.current) return;
       const timer = setTimeout(() => {
@@ -54,7 +58,7 @@ const ForceGraph3DComponent = forwardRef<ForceGraph3DComponentRef, ForceGraph3DC
         width={width}
         height={height}
         graphData={graphData}
-        backgroundColor="#1e293b"
+        backgroundColor={background}
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         nodeLabel={(node: any) => nodeLabel?.(node as GraphNode) ?? node.id} // cast here
         linkLabel="label"

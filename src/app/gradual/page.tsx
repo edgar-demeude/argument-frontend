@@ -1,16 +1,45 @@
 "use client";
 
-import React, { useState } from "react";
-import GradualPanel from "./gradualPanel";
+import { useRef, useState, useEffect } from "react";
+import GradualPanel from "./GradualPanel";
 import Gradual3D from "./Gradual3D";
 import { GradualInput, GradualOutput } from "./types";
 import { API_URL } from "../../../config";
+import GradualResultsPanel from "./GradualResultsPanel";
 
-export default function Page() {
+export default function GradualPage() {
   const [data, setData] = useState<GradualOutput | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState<boolean>(false);
+  const [showHull, setShowHull] = useState(true);
 
+  const graphRef = useRef<{ zoomToFit?: (ms?: number, pad?: number) => void } | null>(null);
+
+  // --- Zoom and resize handling ---
+  const zoomGraph = (delay = 150) => {
+    setTimeout(() => graphRef.current?.zoomToFit?.(400, 50), delay);
+  };
+
+  useEffect(() => {
+    zoomGraph(200);
+  }, []);
+
+  useEffect(() => {
+    const resize = () => {
+      window.dispatchEvent(new Event("resize"));
+      graphRef.current?.zoomToFit?.(400, 50);
+    };
+
+    const timer1 = setTimeout(resize, 100);
+    const timer2 = setTimeout(resize, 300);
+
+    return () => {
+      clearTimeout(timer1);
+      clearTimeout(timer2);
+    };
+  }, []);
+
+  // --- Compute request ---
   async function handleCompute(payload: GradualInput) {
     setLoading(true);
     setError(null);
@@ -24,9 +53,7 @@ export default function Page() {
       });
 
       const text = await res.text();
-      if (!res.ok) {
-        throw new Error(`HTTP ${res.status}: ${text}`);
-      }
+      if (!res.ok) throw new Error(`HTTP ${res.status}: ${text}`);
 
       const json = JSON.parse(text) as GradualOutput;
       setData(json);
@@ -40,42 +67,44 @@ export default function Page() {
   }
 
   return (
-    <div className="flex h-screen bg-[var(--background)] text-[var(--foreground)]">
+    <div className="flex h-screen">
       {/* LEFT PANEL */}
-      <div className="w-1/4 bg-[var(--surface)] p-5 overflow-y-auto border-r border-[var(--border)]">
-        <GradualPanel onRun={handleCompute} />
-      </div>
+      <GradualPanel
+        onRun={handleCompute}
+        showHull={showHull}
+        setShowHull={setShowHull}
+      />
 
-      {/* RIGHT PANEL */}
-      <div className="flex-1 flex flex-col p-6 overflow-hidden">
+      {/* CENTER GRAPH */}
+      <div className="flex-1 h-full overflow-hidden relative bg-[var(--background)] text-[var(--foreground)]">
+        {/* --- LOADING ANIMATION --- */}
         {loading && (
-          <div className="text-sm mb-2 opacity-70">Computing results…</div>
-        )}
-        {error && (
-          <div className="text-sm text-red-500 mb-2">Error: {error}</div>
-        )}
-        {data && (
-          <div className="text-sm mb-4 opacity-90 flex flex-wrap gap-x-6 gap-y-1">
-            <div>
-              <strong>Axes:</strong>{" "}
-              {data.axes && data.axes.length ? data.axes.join(", ") : "—"}
+          <div className="absolute inset-0 flex flex-col items-center justify-center z-10 bg-[color-mix(in_oklab,var(--background)_85%,transparent)] backdrop-blur-sm">
+            <div className="relative w-14 h-14">
+              <div className="absolute top-0 left-0 w-full h-full rounded-full border-4 border-t-transparent border-blue-500 animate-spin"></div>
+              <div className="absolute top-0 left-0 w-full h-full rounded-full border-4 border-transparent border-l-blue-400 animate-[spin_1.2s_linear_infinite_reverse]"></div>
             </div>
-            <div>
-              <strong>Hull Volume:</strong>{" "}
-              {data.hull_volume?.toFixed(4) ?? "—"}
-            </div>
-            <div>
-              <strong>Hull Area:</strong>{" "}
-              {data.hull_area?.toFixed(4) ?? "—"}
-            </div>
+            <p className="mt-6 text-lg font-medium text-gray-500 animate-pulse">
+              Computing results…
+            </p>
           </div>
         )}
 
-        {/* 3D VIEW */}
-        <div className="flex-1 w-full h-full rounded-lg overflow-hidden bg-[var(--surface-alt)] shadow-inner border border-[var(--border)]">
-          <Gradual3D data={data} />
-        </div>
+        {/* --- ERROR --- */}
+        {error && (
+          <div className="absolute top-4 left-4 text-sm text-red-500 z-20">
+            Error: {error}
+          </div>
+        )}
+
+        {/* --- GRAPH --- */}
+        <Gradual3D data={data} showHull={showHull} />
+
       </div>
+
+      {/* RIGHT RESULTS PANEL */}
+      <GradualResultsPanel data={data} />
+
     </div>
   );
 }

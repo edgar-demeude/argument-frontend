@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
-import ABAPanel from "./abaPanel";
-import ABAResultsPanel from "./abaResultsPanel";
+import ABAPanel from "./AbaPanel";
+import ABAResultsPanel from "./AbaResultsPanel";
 import ABAGraph3D from "./ABAGraph";
 import { GraphData, GraphLink, GraphNode, ABAApiResponse } from "../components/types";
 import { GraphWrapperRef } from "../components/GraphWrapper";
