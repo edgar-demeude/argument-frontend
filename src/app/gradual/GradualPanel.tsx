@@ -243,7 +243,7 @@ export default function GradualPanel(props: {
       {/* Sliders for non-visualized args */}
       {nonVisualized.length > 0 && (
         <div className="p-4 rounded-xl border border-[var(--border)] mb-6 shadow-inner bg-[var(--surface-alt)]">
-          <div className="text-sm mb-3 font-semibold text-[var(--foreground)]">
+          <div className="block mb-2 font-semibold text-[var(--foreground)]">
             Adjust weights for other arguments:
           </div>
           <div className="space-y-2">
