@@ -34,18 +34,9 @@ const ForceGraph3DComponent = forwardRef<ForceGraph3DComponentRef, ForceGraph3DC
     const background = (rootStyle?.getPropertyValue("--background") || "#111").trim();
 
     useEffect(() => {
-      if (!fgRef.current) return;
-      const timer = setTimeout(() => {
-        fgRef.current?.zoomToFit?.(400, 50);
-        fgRef.current?.d3ReheatSimulation?.();
-      }, 100);
-      return () => clearTimeout(timer);
-    }, [graphData]);
-
-    useEffect(() => {
       if (ref && "current" in ref) {
         ref.current = {
-          zoomToFit: (duration = 400, padding = 50) => {
+          zoomToFit: (duration = 400, padding = 0) => {
             fgRef.current?.zoomToFit?.(duration, padding);
           },
         };

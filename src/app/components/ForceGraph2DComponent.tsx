@@ -27,6 +27,7 @@ const ForceGraph2DComponent = forwardRef<ForceGraph2DComponentRef, ForceGraph2DC
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const fgRef = useRef<any>(null);
     const [mounted, setMounted] = useState(false);
+    const [ticks, setTicks] = useState(0);
 
     // Get color from CSS
     const rootStyle = typeof window !== "undefined" ? getComputedStyle(document.documentElement) : null;
@@ -56,6 +57,22 @@ const ForceGraph2DComponent = forwardRef<ForceGraph2DComponentRef, ForceGraph2DC
 
       return () => clearTimeout(timer);
     }, [mounted, graphData]);
+
+    useEffect(() => {
+      if (!fgRef.current || !graphData?.nodes?.length) return;
+
+      const zoomDuration = 800; // ms
+      const zoomPadding = 200;
+
+      // delay before zooming: the larger the graph, the longer the delay
+      const zoomDelay = Math.min(2000, 200 + graphData.nodes.length * 15);
+
+      const timer = setTimeout(() => {
+        fgRef.current?.zoomToFit(zoomDuration, zoomPadding);
+      }, zoomDelay);
+
+      return () => clearTimeout(timer);
+    }, [graphData]);
 
     useEffect(() => {
       if (ref && "current" in ref) {

@@ -94,19 +94,6 @@ export default function ABAPage() {
     }
   };
 
-  // Zoom handling
-  const zoomGraph = (delay = 150) => {
-    setTimeout(() => graphRef.current?.zoomToFit?.(400, 50), delay);
-  };
-
-  useEffect(() => {
-    zoomGraph(200);
-  }, []);
-
-  useEffect(() => {
-    if (graphData.nodes.length > 0) zoomGraph(150);
-  }, [graphData]);
-
   useEffect(() => {
     if (abaResults) {
       generateGraph(abaResults);
@@ -116,7 +103,7 @@ export default function ABAPage() {
   useEffect(() => {
     const resize = () => {
       window.dispatchEvent(new Event("resize"));
-      graphRef.current?.zoomToFit?.(400, 50);
+      graphRef.current?.zoomToFit?.(400, -150);
     };
     const timer1 = setTimeout(resize, 100);
     const timer2 = setTimeout(resize, 300);
@@ -129,7 +116,6 @@ export default function ABAPage() {
   // Toggle 2D/3D
   const handleToggleMode = () => {
     setIs3D(prev => !prev);
-    zoomGraph(100);
   };
 
   // File upload / ABA generation
