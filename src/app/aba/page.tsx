@@ -45,37 +45,63 @@ export default function ABAPage() {
    * For ABA+, node names are set to assumption sets (e.g. "{a,c}").
    * For ABA, node names are set to their internal id (e.g. "A1").
    */
+
   const generateGraph = (data: ABAApiResponse) => {
-    const nodeNameMap = getNodeNameMap(data);
     const isABAPlus =
       (data?.aba_plus?.reverse_attacks &&
         data.aba_plus.reverse_attacks.length > 0) ||
       (data?.aba_plus?.normal_attacks &&
-        data.aba_plus.normal_attacks.length > 0)
+        data.aba_plus.normal_attacks.length > 0);
 
-    const nodes: GraphNode[] = (data.arguments ?? []).map(arg => {
-      const id = cleanLabel(arg);
-      // For ABA+, use assumption set as name; for ABA, use internal id (e.g. "A1")
-      return {
-        id,
-        text: isABAPlus && nodeNameMap[id] ? nodeNameMap[id] : id,
-      };
-    });
+    if (isABAPlus) {
+      // --- ABA+ graph: nodes = assumption sets ---
+      const nodes: GraphNode[] = (data.aba_plus.assumption_combinations ?? []).map(setStr => ({
+        id: setStr,
+        text: setStr,
+      }));
 
-    const links: GraphLink[] = (data.attacks ?? []).map(att => {
-      const [source, target] = att.split("→").map(p => p.trim());
-      return { source: cleanLabel(source), target: cleanLabel(target), label: isABAPlus ? "Normal Attack" : "Attack", color: isABAPlus ? "#f87171" : "#f87171" };
-    });
+      // Normal attacks (red)
+      const normalLinks: GraphLink[] = (data.aba_plus.normal_attacks ?? []).map((a, i) => {
+        const [src, dst] = a.split("→").map(p => p.trim());
+        return {
+          source: src,
+          target: dst,
+          label: "Normal Attack",
+          color: "#f87171", // red
+        };
+      });
 
-    const reverseLinks: GraphLink[] = (data.aba_plus.reverse_attacks ?? []).map((_, i) => ({
-      source: nodes[i % nodes.length]?.id ?? `node-${i}`,
-      target: nodes[(i + 1) % nodes.length]?.id ?? `node-${i + 1}`,
-      label: isABAPlus ? "Reverse Attack" : "",
-      color: "#60a5fa",
-      dashed: true,
-    }));
+      // Reverse attacks (blue)
+      const reverseLinks: GraphLink[] = (data.aba_plus.reverse_attacks ?? []).map((a, i) => {
+        const [src, dst] = a.split("→").map(p => p.trim());
+        return {
+          source: src,
+          target: dst,
+          label: "Reverse Attack",
+          color: "#60a5fa", // blue
+        };
+      });
 
-    setGraphData({ nodes, links: [...links, ...reverseLinks] });
+      setGraphData({ nodes, links: [...normalLinks, ...reverseLinks] });
+    } else {
+      // --- Classical ABA graph ---
+      const nodes: GraphNode[] = (data.arguments ?? []).map(arg => {
+        const id = cleanLabel(arg);
+        return { id, text: id };
+      });
+
+      const links: GraphLink[] = (data.attacks ?? []).map(att => {
+        const [source, target] = att.split("→").map(p => p.trim());
+        return {
+          source: cleanLabel(source),
+          target: cleanLabel(target),
+          label: "Attack",
+          color: "#f87171",
+        };
+      });
+
+      setGraphData({ nodes, links });
+    }
   };
 
   // --- Zoom handling ---
