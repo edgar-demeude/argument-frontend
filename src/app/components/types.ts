@@ -42,9 +42,46 @@ export interface ForceGraph2DProps {
   [key: string]: any;
 }
 
-export interface ABAApiResponse {
+export interface RuleDTO {
+  id: string;
+  head: string;
+  body: string[];
+}
+
+export interface FrameworkSnapshot {
+  language: string[];
   assumptions: string[];
+  rules: RuleDTO[];
+  contraries: [string, string][];
+  preferences?: Record<string, string[]>;
+}
+
+export interface TransformationStep {
+  step: "non_circular" | "atomic" | "none";
+  applied: boolean;
+  reason?: string;
+  description?: string;
+  result_snapshot?: FrameworkSnapshot;
+}
+
+export interface ABAApiResponse {
+  meta: {
+    request_id: string;
+    timestamp: string;
+    transformed: boolean;
+    transformations_applied: string[];
+    warnings?: string[];
+    errors?: string[];
+  };
+  original_framework: FrameworkSnapshot;
+  transformations: TransformationStep[];
+  final_framework: FrameworkSnapshot;
   arguments: string[];
   attacks: string[];
-  reverse_attacks: string[];
+  aba_plus: {
+    assumption_combinations: string[];
+    normal_attacks: string[];
+    reverse_attacks: string[];
+  };
 }
+
