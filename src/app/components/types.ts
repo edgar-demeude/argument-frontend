@@ -18,7 +18,7 @@ export interface GraphLink {
   source: string | GraphNode;
   target: string | GraphNode;
   label?: string;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  color?: string;
   [key: string]: any;
 }
 
@@ -38,7 +38,6 @@ export interface ForceGraph2DProps {
   nodeCanvasObject?: (node: GraphNode, ctx: CanvasRenderingContext2D, globalScale: number) => void;
   nodePointerAreaPaint?: (node: GraphNode, color: string, ctx: CanvasRenderingContext2D) => void;
   linkColor?: (link: GraphLink) => string;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   [key: string]: any;
 }
 
@@ -64,6 +63,16 @@ export interface TransformationStep {
   result_snapshot?: FrameworkSnapshot;
 }
 
+export interface FrameworkState {
+  framework: FrameworkSnapshot;
+  arguments: string[];
+  arguments_attacks: string[];
+  argument_attacks: string[];
+  assumption_set_attacks: string[];
+  reverse_attacks: string[];
+  assumption_sets: string[];
+}
+
 export interface ABAApiResponse {
   meta: {
     request_id: string;
@@ -73,15 +82,7 @@ export interface ABAApiResponse {
     warnings?: string[];
     errors?: string[];
   };
-  original_framework: FrameworkSnapshot;
+  before_transformation: FrameworkState;
   transformations: TransformationStep[];
-  final_framework: FrameworkSnapshot;
-  arguments: string[];
-  attacks: string[];
-  aba_plus: {
-    assumption_combinations: string[];
-    normal_attacks: string[];
-    reverse_attacks: string[];
-  };
+  after_transformation: FrameworkState;
 }
-

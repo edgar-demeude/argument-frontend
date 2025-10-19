@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import ABAPanel from "./AbaPanel";
 import ABAResultsPanel from "./AbaResultsPanel";
 import ABAGraph3D from "./ABAGraph";
-import { GraphData, GraphLink, GraphNode, ABAApiResponse } from "../components/types";
+import { GraphData, GraphLink, GraphNode, ABAApiResponse, FrameworkState } from "../components/types";
 import { GraphWrapperRef } from "../components/GraphWrapper";
 import { API_URL } from "../../../config";
 
@@ -14,87 +14,77 @@ export default function ABAPage() {
   const [selectedNode, setSelectedNode] = useState<GraphNode | null>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [is3D, setIs3D] = useState(true);
-  const [originalGraphData, setOriginalGraphData] = useState<GraphData | null>(null);
   const graphRef = useRef<GraphWrapperRef>(null);
 
-  // --- Helpers ---
   /**
-   * Extracts the display name for ABA+ nodes from argument string.
-   * Example: "[A8]={c,a} ⊢ s" → "{c,a}".
+   * Determines if we're viewing ABA+ (has assumption_set_attacks or reverse_attacks)
    */
-  const getNodeNameMap = (data: ABAApiResponse): Record<string, string> => {
-    const map: Record<string, string> = {};
-    (data.arguments ?? []).forEach(arg => {
-      const match = arg.match(/^\[([A0-9]+)\]=\{([^}]*)\}/);
-      if (match) {
-        map[match[1]] = `{${match[2]}}`;
-      }
-    });
-    return map;
+  const isABAPlus = (data: ABAApiResponse): boolean => {
+    const after = data.after_transformation;
+    return (
+      (after?.assumption_set_attacks?.length ?? 0) > 0 ||
+      (after?.reverse_attacks?.length ?? 0) > 0
+    );
   };
 
   /**
-   * Cleans the internal node id from argument string.
-   * Example: "[A8]={c,a} ⊢ s" → "A8".
+   * Generates graph from ABA+ or classical ABA data
    */
-  const cleanLabel = (arg: string) =>
-    arg.startsWith("[") && arg.indexOf("]") > 0 ? arg.slice(1, arg.indexOf("]")) : arg;
-
-  /**
-   * Generates graph nodes and links for ABA/ABA+.
-   * For ABA+, node names are set to assumption sets (e.g. "{a,c}").
-   * For ABA, node names are set to their internal id (e.g. "A1").
-   */
-
   const generateGraph = (data: ABAApiResponse) => {
-    const isABAPlus =
-      (data?.aba_plus?.reverse_attacks &&
-        data.aba_plus.reverse_attacks.length > 0) ||
-      (data?.aba_plus?.normal_attacks &&
-        data.aba_plus.normal_attacks.length > 0);
+    // Support both old structure (original_framework/final_framework) and new structure (before/after_transformation)
+    const frameworkState = data.after_transformation || 
+                          (data as any).final_framework || 
+                          (data as any).original_framework;
 
-    if (isABAPlus) {
+    if (!frameworkState) {
+      console.error("Invalid data structure:", data);
+      return;
+    }
+
+    if (isABAPlus(data)) {
       // --- ABA+ graph: nodes = assumption sets ---
-      const nodes: GraphNode[] = (data.aba_plus.assumption_combinations ?? []).map(setStr => ({
+      const nodes: GraphNode[] = (frameworkState.assumption_sets ?? []).map(setStr => ({
         id: setStr,
         text: setStr,
       }));
 
       // Normal attacks (red)
-      const normalLinks: GraphLink[] = (data.aba_plus.normal_attacks ?? []).map((a, i) => {
+      const normalLinks: GraphLink[] = (frameworkState.assumption_set_attacks ?? []).map(a => {
         const [src, dst] = a.split("→").map(p => p.trim());
         return {
           source: src,
           target: dst,
           label: "Normal Attack",
-          color: "#f87171", // red
+          color: "#f87171",
         };
       });
 
       // Reverse attacks (blue)
-      const reverseLinks: GraphLink[] = (data.aba_plus.reverse_attacks ?? []).map((a, i) => {
+      const reverseLinks: GraphLink[] = (frameworkState.reverse_attacks ?? []).map(a => {
         const [src, dst] = a.split("→").map(p => p.trim());
         return {
           source: src,
           target: dst,
           label: "Reverse Attack",
-          color: "#60a5fa", // blue
+          color: "#60a5fa",
         };
       });
 
       setGraphData({ nodes, links: [...normalLinks, ...reverseLinks] });
     } else {
       // --- Classical ABA graph ---
-      const nodes: GraphNode[] = (data.arguments ?? []).map(arg => {
-        const id = cleanLabel(arg);
+      const nodes: GraphNode[] = (frameworkState.arguments ?? []).map(arg => {
+        const id = arg.match(/^\[([A0-9]+)\]/)?.[1] ?? arg;
         return { id, text: id };
       });
 
-      const links: GraphLink[] = (data.attacks ?? []).map(att => {
+      const links: GraphLink[] = (frameworkState.arguments_attacks ?? []).map(att => {
         const [source, target] = att.split("→").map(p => p.trim());
+        const srcId = source.match(/\[([A0-9]+)\]/)?.[1] ?? source;
+        const tgtId = target.match(/\[([A0-9]+)\]/)?.[1] ?? target;
         return {
-          source: cleanLabel(source),
-          target: cleanLabel(target),
+          source: srcId,
+          target: tgtId,
           label: "Attack",
           color: "#f87171",
         };
@@ -104,13 +94,13 @@ export default function ABAPage() {
     }
   };
 
-  // --- Zoom handling ---
+  // Zoom handling
   const zoomGraph = (delay = 150) => {
     setTimeout(() => graphRef.current?.zoomToFit?.(400, 50), delay);
   };
 
   useEffect(() => {
-    zoomGraph(200); // initial zoom
+    zoomGraph(200);
   }, []);
 
   useEffect(() => {
@@ -122,25 +112,21 @@ export default function ABAPage() {
       window.dispatchEvent(new Event("resize"));
       graphRef.current?.zoomToFit?.(400, 50);
     };
-
-    // Call after mount
     const timer1 = setTimeout(resize, 100);
-    const timer2 = setTimeout(resize, 300); // ensure layout is done
-
+    const timer2 = setTimeout(resize, 300);
     return () => {
       clearTimeout(timer1);
       clearTimeout(timer2);
     };
   }, []);
 
-  // --- Toggle 2D/3D ---
+  // Toggle 2D/3D
   const handleToggleMode = () => {
     setIs3D(prev => !prev);
-    if (originalGraphData) setGraphData(originalGraphData);
     zoomGraph(100);
   };
 
-  // --- File upload / ABA generation ---
+  // File upload / ABA generation
   const uploadFileAndGenerate = async (endpoint: string) => {
     if (!selectedFile) return alert("Please select a file first");
 
