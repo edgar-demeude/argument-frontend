@@ -63,7 +63,7 @@ export default function RelationsPanel({
       </div>
 
       {/* CSV loader */}
-      <div className="mb-6 p-4 rounded-lg shadow-inner bg-[var(--surface-alt)] border border-[var(--border)]">
+      <div className="mb-4 p-4 rounded-lg shadow-inner bg-[var(--surface-alt)] border border-[var(--border)]">
         <label className="block font-semibold mb-2 text-[var(--foreground)]">Load CSV</label>
 
         <input
@@ -82,7 +82,7 @@ export default function RelationsPanel({
           {loading ? "Loading..." : "Upload .csv File"}
         </label>
 
-        <p className="text-center text-[var(--muted)] my-3 text-sm">— or —</p>
+        <p className="text-center text-[var(--muted)] my-3 text-xs">— or —</p>
 
         <select
           value={selectedSample}
@@ -120,7 +120,7 @@ export default function RelationsPanel({
       </div>
 
       {/* Add Relation */}
-      <div className="space-y-3 mt-6">
+      <div className="space-y-3">
         <input
           value={arg1}
           onChange={(e) => setArg1(e.target.value)}

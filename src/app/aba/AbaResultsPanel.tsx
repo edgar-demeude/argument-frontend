@@ -171,7 +171,7 @@ export default function ABAResultsPanel({ results }: ABAResultsPanelProps) {
   return (
     <div className="w-1/5 bg-[var(--background)] p-4 overflow-y-auto text-[var(--foreground)] flex-shrink-0 space-y-4 border-l border-[color-mix(in_oklab,var(--foreground)_20%,transparent)] flex flex-col text-xs">
       {/* Legend */}
-      <div className="p-3 bg-[var(--surface-alt)] border border-[var(--border)] rounded-lg text-xs space-y-1 sticky top-0">
+      <div className="p-3 bg-[var(--surface-alt)] border border-[var(--border)] rounded-lg text-xs space-y-1 top-0">
         <div className="flex items-center gap-2">
           <span className="w-3 h-2 block bg-red-400"></span>
           <span>{isPlus ? "Normal Attack" : "Attack"}</span>
