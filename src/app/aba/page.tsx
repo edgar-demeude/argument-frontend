@@ -14,6 +14,7 @@ export default function ABAPage() {
   const [selectedNode, setSelectedNode] = useState<GraphNode | null>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [is3D, setIs3D] = useState(true);
+  const [viewMode, setViewMode] = useState<"before" | "after">("after");
   const graphRef = useRef<GraphWrapperRef>(null);
 
   /**
@@ -28,13 +29,12 @@ export default function ABAPage() {
   };
 
   /**
-   * Generates graph from ABA+ or classical ABA data
+   * Generates graph from ABA+ or classical ABA data based on selected view mode
    */
   const generateGraph = (data: ABAApiResponse) => {
-    // Support both old structure (original_framework/final_framework) and new structure (before/after_transformation)
-    const frameworkState = data.after_transformation || 
-                          (data as any).final_framework || 
-                          (data as any).original_framework;
+    const frameworkState = viewMode === "before" 
+      ? data.before_transformation 
+      : data.after_transformation;
 
     if (!frameworkState) {
       console.error("Invalid data structure:", data);
@@ -108,6 +108,12 @@ export default function ABAPage() {
   }, [graphData]);
 
   useEffect(() => {
+    if (abaResults) {
+      generateGraph(abaResults);
+    }
+  }, [viewMode, abaResults]);
+
+  useEffect(() => {
     const resize = () => {
       window.dispatchEvent(new Event("resize"));
       graphRef.current?.zoomToFit?.(400, 50);
@@ -160,6 +166,9 @@ export default function ABAPage() {
         loading={loading}
         onToggleMode={handleToggleMode}
         is3D={is3D}
+        viewMode={viewMode}
+        setViewMode={setViewMode}
+        hasTransformation={abaResults?.meta.transformed ?? false}
       />
 
       <div className="flex-1 h-full overflow-hidden relative">

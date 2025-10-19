@@ -3,6 +3,7 @@ import { ABAApiResponse, FrameworkState } from "../components/types";
 
 interface ABAResultsPanelProps {
   results: ABAApiResponse | null;
+  viewMode?: "before" | "after";
 }
 
 export default function ABAResultsPanel({ results }: ABAResultsPanelProps) {
