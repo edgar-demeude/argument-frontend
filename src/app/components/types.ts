@@ -19,6 +19,7 @@ export interface GraphLink {
   target: string | GraphNode;
   label?: string;
   color?: string;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   [key: string]: any;
 }
 
@@ -38,6 +39,7 @@ export interface ForceGraph2DProps {
   nodeCanvasObject?: (node: GraphNode, ctx: CanvasRenderingContext2D, globalScale: number) => void;
   nodePointerAreaPaint?: (node: GraphNode, color: string, ctx: CanvasRenderingContext2D) => void;
   linkColor?: (link: GraphLink) => string;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   [key: string]: any;
 }
 
