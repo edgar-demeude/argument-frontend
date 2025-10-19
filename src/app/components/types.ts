@@ -49,7 +49,7 @@ export interface RuleDTO {
 }
 
 export interface FrameworkSnapshot {
-  language: string;
+  language: string[];
   assumptions: string[];
   rules: RuleDTO[];
   contraries: [string, string][];
@@ -69,7 +69,7 @@ export interface ABAApiResponse {
     request_id: string;
     timestamp: string;
     transformed: boolean;
-    transformation_applied: string[];
+    transformations_applied: string[];
     warnings?: string[];
     errors?: string[];
   };
@@ -79,9 +79,9 @@ export interface ABAApiResponse {
   arguments: string[];
   attacks: string[];
   aba_plus: {
-    assumptions_sets: string[];
-    normal_attacks: { from: string; to: string }[];
-    reverse_attacks: { from: string; to: string }[];
+    assumption_combinations: string[];
+    normal_attacks: string[];
+    reverse_attacks: string[];
   };
 }
 

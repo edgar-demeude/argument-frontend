@@ -47,7 +47,12 @@ export default function ABAPage() {
    */
   const generateGraph = (data: ABAApiResponse) => {
     const nodeNameMap = getNodeNameMap(data);
-    const isABAPlus = data.reverse_attacks && data.reverse_attacks.length > 0;
+    const isABAPlus =
+      (data?.aba_plus?.reverse_attacks &&
+        data.aba_plus.reverse_attacks.length > 0) ||
+      (data?.aba_plus?.normal_attacks &&
+        data.aba_plus.normal_attacks.length > 0)
+
     const nodes: GraphNode[] = (data.arguments ?? []).map(arg => {
       const id = cleanLabel(arg);
       // For ABA+, use assumption set as name; for ABA, use internal id (e.g. "A1")
@@ -62,7 +67,7 @@ export default function ABAPage() {
       return { source: cleanLabel(source), target: cleanLabel(target), label: isABAPlus ? "Normal Attack" : "Attack", color: isABAPlus ? "#f87171" : "#f87171" };
     });
 
-    const reverseLinks: GraphLink[] = (data.reverse_attacks ?? []).map((_, i) => ({
+    const reverseLinks: GraphLink[] = (data.aba_plus.reverse_attacks ?? []).map((_, i) => ({
       source: nodes[i % nodes.length]?.id ?? `node-${i}`,
       target: nodes[(i + 1) % nodes.length]?.id ?? `node-${i + 1}`,
       label: isABAPlus ? "Reverse Attack" : "",
